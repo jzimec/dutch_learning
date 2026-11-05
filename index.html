@@ -998,6 +998,31 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
  .review-quiz-word > .review-quiz-audio-controls {bottom:18px!important;right:18px!important;}
 }
 </style>
+<style>
+/* Progress five-column legibility: keep words intact; allow sideways scrolling on narrow screens. */
+.progress-scroll {width:100%;max-width:100%;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+.progress-scroll .progress-table {width:100%;min-width:540px!important;table-layout:auto!important;border-collapse:collapse}
+.progress-scroll .progress-table th,
+.progress-scroll .progress-table td {
+  font-size:clamp(14px,1.05vw,16px)!important;
+  line-height:1.4!important;
+  padding:10px 9px!important;
+  white-space:nowrap!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  vertical-align:middle!important;
+}
+.progress-scroll .progress-table th:first-child,
+.progress-scroll .progress-table td:first-child {width:54px!important;min-width:54px!important;max-width:none!important}
+.progress-scroll .progress-table th:nth-child(2),
+.progress-scroll .progress-table td:nth-child(2) {min-width:130px!important}
+.progress-scroll .progress-table th:nth-child(3),
+.progress-scroll .progress-table td:nth-child(3) {min-width:140px!important}
+.progress-scroll .progress-table th:nth-child(4),
+.progress-scroll .progress-table td:nth-child(4),
+.progress-scroll .progress-table th:nth-child(5),
+.progress-scroll .progress-table td:nth-child(5) {min-width:74px!important;text-align:center!important}
+</style>
 </head>
 <body>
 <div class="app-shell">
@@ -1419,7 +1444,7 @@ function finishReviewRound(){
 }
 
 function showNewWords(){const items=allLessons().filter(l=>{const p=progress[keyFor(l,l._cat)];return !(p&&normalizeProgressRecord(p).seen);});if(!items.length)return showSpecial('<h2 class="special-title">New Words</h2><div class="empty-state">No new words in the current library.</div>','new');const cards=items.slice(0,500).map(l=>`<button class="list-card" data-cat="${l._cat}" data-index="${l._index}"><div class="nl">${l.nl}</div><div class="trans">${l.en}</div><div class="trans">${l.zh}</div></button>`).join('');showSpecial(`<h2 class="special-title">New Words</h2><div class="special-sub">Showing the next ${Math.min(items.length,500)} of ${items.length} unlearned words.</div><div class="item-list">${cards}</div>`,'new');bindLessonCards();}
-function showProgress(){const rows=allLessons().map(l=>{const p=progress[keyFor(l,l._cat)]?normalizeProgressRecord(progress[keyFor(l,l._cat)]):{correct:0,wrong:0,seen:false};const status=p.correct>=3&&p.correct>p.wrong?'Mastered':p.everWrong?'Review':p.seen?'Learning':'New';return `<tr><td title="${categoryTitle(l._cat)}">${categoryTitle(l._cat).split(/\s*&\s*|\s+/).filter(Boolean).map(w=>w[0].toUpperCase()).join("")}</td><td>${l.nl}</td><td>${l.en}</td><td>${p.correct}</td><td>${p.wrong}</td><td>${status}</td></tr>`;}).join('');showSpecial(`<h2 class="special-title">Progress</h2><div class="progress-scroll"><table class="progress-table"><thead><tr><th>Category</th><th>Dutch</th><th>English</th><th>Correct</th><th>Wrong</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`,'progress');}
+function showProgress(){const rows=allLessons().map(l=>{const p=progress[keyFor(l,l._cat)]?normalizeProgressRecord(progress[keyFor(l,l._cat)]):{correct:0,wrong:0,seen:false};const status=p.correct>=3&&p.correct>p.wrong?'Mastered':p.everWrong?'Review':p.seen?'Learning':'New';return `<tr><td title="${categoryTitle(l._cat)}">${categoryTitle(l._cat).split(/\s*&\s*|\s+/).filter(Boolean).map(w=>w[0].toUpperCase()).join("")}</td><td>${l.nl}</td><td>${l.en}</td><td>${p.correct}</td><td>${p.wrong}</td></tr>`;}).join('');showSpecial(`<h2 class="special-title">Progress</h2><div class="progress-scroll"><table class="progress-table"><thead><tr><th>Category</th><th>Dutch</th><th>English</th><th>Correct</th><th>Wrong</th></tr></thead><tbody>${rows}</tbody></table>`,'progress');}
 function showCategories(){const html=Object.entries(categoryMeta).map(([id,m])=>`<button class="category-card" data-category-open="${id}"><h3>${m.title}</h3><p>${m.zh} · ${m.level} · ${(lessonsData[id]||[]).length} / ${m.target_words} words</p></button>`).join('');showSpecial(`<h2 class="special-title">Categories</h2><div class="category-grid">${html}</div>`,'categories');document.querySelectorAll('[data-category-open]').forEach(b=>b.onclick=()=>{const id=b.dataset.categoryOpen;(lessonsData[id]||[]).length?openLesson(id,0):showEmptyCategory(id);});}
 function bindLessonCards(){document.querySelectorAll('.list-card').forEach(b=>b.onclick=()=>openLesson(b.dataset.cat,Number(b.dataset.index)));}
 
