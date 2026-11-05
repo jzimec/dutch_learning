@@ -962,55 +962,40 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
 </style>
 
 
+
 <style>
-/* Scoped layout adjustment: bottom navigation and Quiz only. */
+/* User-requested placement: Learn audio at each card top-right; Quiz audio at page bottom-right. */
 @media (max-width:1000px), (pointer:coarse) {
-  .mobile-bottom-nav {
-    display:flex!important;
-    justify-content:space-between!important;
-    gap:0!important;
-    overflow-x:hidden!important;
-  }
-  .mobile-bottom-nav > .mobile-nav-action {
-    flex:1 1 0!important;
-    width:0!important;
-    min-width:0!important;
-    max-width:none!important;
-    box-sizing:border-box!important;
-  }
-  .mobile-bottom-nav > .mobile-nav-action small {
-    max-width:100%;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
+  .mobile-bottom-nav {display:flex!important;justify-content:space-between!important;gap:0!important;overflow-x:hidden!important;}
+  .mobile-bottom-nav > .mobile-nav-action {flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;}
+  .mobile-bottom-nav > .mobile-nav-action small {overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 }
-.review-quiz-word {
-  position:relative;
-  display:flex;
-  flex-wrap:wrap;
-  align-items:flex-start;
-  padding-bottom:46px;
+.mobile-word-card .title-row,
+.mobile-sentence-card .sentence-mobile-title {
+  display:flex!important;align-items:flex-start!important;justify-content:space-between!important;width:100%;
 }
+.mobile-word-card .title-row > .learn-audio-stack,
+.mobile-sentence-card .sentence-mobile-title > .learn-audio-stack {
+  margin-left:auto!important;align-self:flex-start!important;justify-content:flex-start!important;
+  flex-shrink:0!important;transform:none!important;
+}
+.review-quiz-word {padding-bottom:0!important;position:static!important;}
 .review-quiz-word > .review-quiz-audio-controls {
-  position:absolute;
-  right:0;
-  bottom:0;
-  margin:0;
-  display:flex;
-  align-items:center;
-  gap:6px;
+  position:fixed!important;right:14px!important;bottom:calc(78px + env(safe-area-inset-bottom))!important;
+  top:auto!important;left:auto!important;z-index:9998!important;margin:0!important;
+  display:flex!important;align-items:center!important;gap:6px!important;
+  padding:5px!important;border-radius:13px!important;
+  background:rgba(255,255,255,.97)!important;box-shadow:0 2px 14px rgba(0,0,0,.12)!important;
 }
 .review-quiz-word > .review-quiz-audio-controls > .audio.small {
-  width:38px;
-  height:38px;
-  min-height:38px;
-  border-radius:50%;
-  font-size:18px;
-  padding:0;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  line-height:1;
+  width:43px!important;height:37px!important;min-width:43px!important;min-height:37px!important;
+  border:1px solid #a9bfd5!important;border-radius:12px!important;
+  background:#f5f9ff!important;color:#263a4d!important;box-shadow:none!important;
+  padding:3px!important;font-size:21px!important;line-height:1.1!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+}
+@media (min-width:1001px) and (pointer:fine) {
+ .review-quiz-word > .review-quiz-audio-controls {bottom:18px!important;right:18px!important;}
 }
 </style>
 </head>
