@@ -1,0 +1,38 @@
+name: One-time Dutch Learning layout refinement
+on:
+  push:
+    paths:
+      - '.github/workflows/layout-refinement-once.yml'
+permissions:
+  contents: write
+jobs:
+  adjust-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Update CSS without touching learning data or JS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+            from pathlib import Path
+            p = Path("index.html")
+            s = p.read_text(encoding="utf-8")
+            assert s.count("</head>") == 1
+            assert s.count('class="mobile-nav-action nav-action') == 6
+            assert s.count('id="reviewQuizAudio"') == 1
+            assert "Dutch Learning: equal six-module navigation" not in s
+            css = "\n<style>\n/* Dutch Learning: equal six-module navigation and Quiz audio placement (2026-11-06) */\n@media (max-width:1000px), (pointer:coarse) {\n  .mobile-bottom-nav { display:flex!important; justify-content:space-evenly!important; overflow-x:hidden!important; gap:0!important; box-sizing:border-box!important; }\n  .mobile-bottom-nav > .mobile-nav-action { flex:1 1 0!important; width:0!important; min-width:0!important; max-width:none!important; box-sizing:border-box!important; }\n  .mobile-bottom-nav > .mobile-nav-action small { max-width:100%; overflow:hidden; text-overflow:ellipsis; }\n}\n.review-quiz-word { position:relative; align-items:flex-start; padding-bottom:53px; }\n.review-quiz-word .review-quiz-audio-controls { position:absolute; right:0; bottom:0; margin:0; display:flex; gap:5px; align-items:center; }\n.review-quiz-word .review-quiz-audio-controls .audio.small {\n  width:43px; height:38px; min-height:38px; border-radius:10px; font-size:21px;\n  display:inline-flex; align-items:center; justify-content:center; line-height:1;\n}\n</style>\n"
+            p.write_text(s.replace("</head>", css + "</head>", 1), encoding="utf-8")
+            print("Updated only mobile navigation and Quiz audio CSS")
+          PY
+      - name: Commit only index.html
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Evenly space six navigation modules and align Quiz audio"
+          git push
