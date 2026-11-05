@@ -961,18 +961,56 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
 .review-quiz-guess:disabled{cursor:default;opacity:.7}
 </style>
 
+
 <style>
-/* Dutch Learning: equal six-module navigation and Quiz audio placement (2026-11-06) */
+/* Scoped layout adjustment: bottom navigation and Quiz only. */
 @media (max-width:1000px), (pointer:coarse) {
-  .mobile-bottom-nav { display:flex!important; justify-content:space-evenly!important; overflow-x:hidden!important; gap:0!important; box-sizing:border-box!important; }
-  .mobile-bottom-nav > .mobile-nav-action { flex:1 1 0!important; width:0!important; min-width:0!important; max-width:none!important; box-sizing:border-box!important; }
-  .mobile-bottom-nav > .mobile-nav-action small { max-width:100%; overflow:hidden; text-overflow:ellipsis; }
+  .mobile-bottom-nav {
+    display:flex!important;
+    justify-content:space-between!important;
+    gap:0!important;
+    overflow-x:hidden!important;
+  }
+  .mobile-bottom-nav > .mobile-nav-action {
+    flex:1 1 0!important;
+    width:0!important;
+    min-width:0!important;
+    max-width:none!important;
+    box-sizing:border-box!important;
+  }
+  .mobile-bottom-nav > .mobile-nav-action small {
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 }
-.review-quiz-word { position:relative; align-items:flex-start; padding-bottom:53px; }
-.review-quiz-word .review-quiz-audio-controls { position:absolute; right:0; bottom:0; margin:0; display:flex; gap:5px; align-items:center; }
-.review-quiz-word .review-quiz-audio-controls .audio.small {
-  width:43px; height:38px; min-height:38px; border-radius:10px; font-size:21px;
-  display:inline-flex; align-items:center; justify-content:center; line-height:1;
+.review-quiz-word {
+  position:relative;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-start;
+  padding-bottom:46px;
+}
+.review-quiz-word > .review-quiz-audio-controls {
+  position:absolute;
+  right:0;
+  bottom:0;
+  margin:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.review-quiz-word > .review-quiz-audio-controls > .audio.small {
+  width:38px;
+  height:38px;
+  min-height:38px;
+  border-radius:50%;
+  font-size:18px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
 }
 </style>
 </head>
