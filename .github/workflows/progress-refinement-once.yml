@@ -1,0 +1,65 @@
+name: One-time Dutch Learning Progress refinement
+on:
+  push:
+    paths:
+      - '.github/workflows/progress-refinement-once.yml'
+permissions:
+  contents: write
+jobs:
+  adjust-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove Progress Status column and prevent word breaks
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("index.html")
+          s=p.read_text(encoding="utf-8")
+          header='<th>Wrong</th><th>Status</th></tr>'
+          row='<td>${p.wrong}</td><td>${status}</td></tr>'
+          assert s.count(header)==1, "Progress header pattern changed; abort"
+          assert s.count(row)==1, "Progress row pattern changed; abort"
+          assert '/* Progress five-column legibility */' not in s
+          s=s.replace(header,'<th>Wrong</th></tr>',1)
+          s=s.replace(row,'<td>${p.wrong}</td></tr>',1)
+          css="""<style>
+          /* Progress five-column legibility: keep words intact; allow sideways scrolling on narrow screens. */
+          .progress-scroll {width:100%;max-width:100%;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
+          .progress-scroll .progress-table {width:100%;min-width:540px!important;table-layout:auto!important;border-collapse:collapse}
+          .progress-scroll .progress-table th,
+          .progress-scroll .progress-table td {
+            font-size:clamp(14px,1.05vw,16px)!important;
+            line-height:1.4!important;
+            padding:10px 9px!important;
+            white-space:nowrap!important;
+            overflow-wrap:normal!important;
+            word-break:normal!important;
+            vertical-align:middle!important;
+          }
+          .progress-scroll .progress-table th:first-child,
+          .progress-scroll .progress-table td:first-child {width:54px!important;min-width:54px!important;max-width:none!important}
+          .progress-scroll .progress-table th:nth-child(2),
+          .progress-scroll .progress-table td:nth-child(2) {min-width:130px!important}
+          .progress-scroll .progress-table th:nth-child(3),
+          .progress-scroll .progress-table td:nth-child(3) {min-width:140px!important}
+          .progress-scroll .progress-table th:nth-child(4),
+          .progress-scroll .progress-table td:nth-child(4),
+          .progress-scroll .progress-table th:nth-child(5),
+          .progress-scroll .progress-table td:nth-child(5) {min-width:74px!important;text-align:center!important}
+          </style>"""
+          assert s.count("</head>")==1
+          s=s.replace("</head>",css+"\n</head>",1)
+          p.write_text(s,encoding="utf-8")
+          print("Progress status column removed; five columns no wrap, legible type and horizontal scrolling.")
+          PY
+      - name: Commit only index.html
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Remove Progress Status column and improve table legibility"
+          git push
