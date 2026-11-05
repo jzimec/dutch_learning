@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Restore Learn and adjust only bottom navigation + Quiz
+      - name: Place Learn audio top-right and Quiz audio page bottom-right
         shell: bash
         run: |
           python3 - <<'PY'
@@ -18,16 +18,18 @@ jobs:
           import re
           p=Path("index.html")
           s=p.read_text(encoding="utf-8")
-          assert s.count('class="mobile-nav-action nav-action') == 6
+          assert s.count('id="wordAudio"') == 1
+          assert s.count('id="sentenceAudio"') == 1
           assert s.count('id="reviewQuizAudio"') == 1
-          assert s.count('id="wordAudio"') == 1 and s.count('id="sentenceAudio"') == 1
-          pattern = r'\n<style>\n/\* Dutch Learning: equal six-module navigation and Quiz audio placement \(2026-11-06\) \*/.*?</style>\n'
-          s, n = re.subn(pattern, '\n', s, count=1, flags=re.S)
-          assert n == 1, "Earlier added style not found - stop without changing index.html"
-          css = "<style>\n/* Scoped layout adjustment: bottom navigation and Quiz only. */\n@media (max-width:1000px), (pointer:coarse) {\n  .mobile-bottom-nav {\n    display:flex!important;\n    justify-content:space-between!important;\n    gap:0!important;\n    overflow-x:hidden!important;\n  }\n  .mobile-bottom-nav > .mobile-nav-action {\n    flex:1 1 0!important;\n    width:0!important;\n    min-width:0!important;\n    max-width:none!important;\n    box-sizing:border-box!important;\n  }\n  .mobile-bottom-nav > .mobile-nav-action small {\n    max-width:100%;\n    overflow:hidden;\n    text-overflow:ellipsis;\n  }\n}\n.review-quiz-word {\n  position:relative;\n  display:flex;\n  flex-wrap:wrap;\n  align-items:flex-start;\n  padding-bottom:46px;\n}\n.review-quiz-word > .review-quiz-audio-controls {\n  position:absolute;\n  right:0;\n  bottom:0;\n  margin:0;\n  display:flex;\n  align-items:center;\n  gap:6px;\n}\n.review-quiz-word > .review-quiz-audio-controls > .audio.small {\n  width:38px;\n  height:38px;\n  min-height:38px;\n  border-radius:50%;\n  font-size:18px;\n  padding:0;\n  display:inline-flex;\n  align-items:center;\n  justify-content:center;\n  line-height:1;\n}\n</style>"
-          s = s.replace("</head>", "\n"+css+"\n</head>", 1)
+          assert s.count('class="mobile-nav-action nav-action') == 6
+          pattern=r'\n<style>\n/\* Scoped layout adjustment: bottom navigation and Quiz only\. \*/.*?</style>\n'
+          s,n=re.subn(pattern,'\n',s,count=1,flags=re.S)
+          assert n==1,"Previously added scoped stylesheet not found"
+          css="<style>\n/* User-requested placement: Learn audio at each card top-right; Quiz audio at page bottom-right. */\n@media (max-width:1000px), (pointer:coarse) {\n  .mobile-bottom-nav {display:flex!important;justify-content:space-between!important;gap:0!important;overflow-x:hidden!important;}\n  .mobile-bottom-nav > .mobile-nav-action {flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;box-sizing:border-box!important;}\n  .mobile-bottom-nav > .mobile-nav-action small {overflow:hidden;text-overflow:ellipsis;max-width:100%;}\n}\n.mobile-word-card .title-row,\n.mobile-sentence-card .sentence-mobile-title {\n  display:flex!important;align-items:flex-start!important;justify-content:space-between!important;width:100%;\n}\n.mobile-word-card .title-row > .learn-audio-stack,\n.mobile-sentence-card .sentence-mobile-title > .learn-audio-stack {\n  margin-left:auto!important;align-self:flex-start!important;justify-content:flex-start!important;\n  flex-shrink:0!important;transform:none!important;\n}\n.review-quiz-word {padding-bottom:0!important;position:static!important;}\n.review-quiz-word > .review-quiz-audio-controls {\n  position:fixed!important;right:14px!important;bottom:calc(78px + env(safe-area-inset-bottom))!important;\n  top:auto!important;left:auto!important;z-index:9998!important;margin:0!important;\n  display:flex!important;align-items:center!important;gap:6px!important;\n  padding:5px!important;border-radius:13px!important;\n  background:rgba(255,255,255,.97)!important;box-shadow:0 2px 14px rgba(0,0,0,.12)!important;\n}\n.review-quiz-word > .review-quiz-audio-controls > .audio.small {\n  width:43px!important;height:37px!important;min-width:43px!important;min-height:37px!important;\n  border:1px solid #a9bfd5!important;border-radius:12px!important;\n  background:#f5f9ff!important;color:#263a4d!important;box-shadow:none!important;\n  padding:3px!important;font-size:21px!important;line-height:1.1!important;\n  display:inline-flex!important;align-items:center!important;justify-content:center!important;\n}\n@media (min-width:1001px) and (pointer:fine) {\n .review-quiz-word > .review-quiz-audio-controls {bottom:18px!important;right:18px!important;}\n}\n</style>"
+          assert s.count("</head>")==1
+          s=s.replace("</head>","\n"+css+"\n</head>",1)
           p.write_text(s,encoding="utf-8")
-          print("Replaced previous CSS; scoped strictly to bottom navigation and Quiz. Learn unchanged.")
+          print("Updated Learn top-right and Quiz fixed page bottom-right; six nav items equal.")
           PY
       - name: Commit only index.html
         shell: bash
@@ -36,5 +38,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --check
-          git commit -m "Scope audio styling to Quiz and evenly space nav modules"
+          git commit -m "Align Learn audio top-right and Quiz audio page bottom-right"
           git push
