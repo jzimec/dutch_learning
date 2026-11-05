@@ -1,4 +1,4 @@
-name: One-time Dutch Learning Progress refinement
+name: One-time Dutch Learning Progress and UI correction
 on:
   push:
     paths:
@@ -10,49 +10,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Remove Progress Status column and prevent word breaks
+      - name: Fix Quiz spacing Learn alignment and Progress Status
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          import re
           p=Path("index.html")
           s=p.read_text(encoding="utf-8")
-          header='<th>Wrong</th><th>Status</th></tr>'
-          row='<td>${p.wrong}</td><td>${status}</td></tr>'
-          assert s.count(header)==1, "Progress header pattern changed; abort"
-          assert s.count(row)==1, "Progress row pattern changed; abort"
-          assert '/* Progress five-column legibility */' not in s
-          s=s.replace(header,'<th>Wrong</th></tr>',1)
-          s=s.replace(row,'<td>${p.wrong}</td></tr>',1)
-          css="""<style>
-          /* Progress five-column legibility: keep words intact; allow sideways scrolling on narrow screens. */
-          .progress-scroll {width:100%;max-width:100%;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
-          .progress-scroll .progress-table {width:100%;min-width:540px!important;table-layout:auto!important;border-collapse:collapse}
-          .progress-scroll .progress-table th,
-          .progress-scroll .progress-table td {
-            font-size:clamp(14px,1.05vw,16px)!important;
-            line-height:1.4!important;
-            padding:10px 9px!important;
-            white-space:nowrap!important;
-            overflow-wrap:normal!important;
-            word-break:normal!important;
-            vertical-align:middle!important;
-          }
-          .progress-scroll .progress-table th:first-child,
-          .progress-scroll .progress-table td:first-child {width:54px!important;min-width:54px!important;max-width:none!important}
-          .progress-scroll .progress-table th:nth-child(2),
-          .progress-scroll .progress-table td:nth-child(2) {min-width:130px!important}
-          .progress-scroll .progress-table th:nth-child(3),
-          .progress-scroll .progress-table td:nth-child(3) {min-width:140px!important}
-          .progress-scroll .progress-table th:nth-child(4),
-          .progress-scroll .progress-table td:nth-child(4),
-          .progress-scroll .progress-table th:nth-child(5),
-          .progress-scroll .progress-table td:nth-child(5) {min-width:74px!important;text-align:center!important}
-          </style>"""
+          assert s.count('id="wordAudio"')==1 and s.count('id="sentenceAudio"')==1
+          assert s.count('id="reviewQuizAudio"')==1
+          assert s.count('class="progress-table"')==1
+          # Guarantee the visible Progress table has exactly five columns.
+          h='<th>Wrong</th><th>Status</th></tr>'
+          r='<td>${p.wrong}</td><td>${status}</td></tr>'
+          if h in s:
+              assert s.count(h)==1
+              s=s.replace(h,'<th>Wrong</th></tr>',1)
+          if r in s:
+              assert s.count(r)==1
+              s=s.replace(r,'<td>${p.wrong}</td></tr>',1)
+          assert h not in s and r not in s
+          assert '<th>Wrong</th></tr>' in s
+          assert '<td>${p.wrong}</td></tr>' in s
+          # Replace only our own most recent corrective stylesheet, if script is rerun.
+          mark='/* 2026-11-06: user-requested fixes only: Quiz option size, Learn audio alignment, Progress columns. */'
+          if mark in s:
+              s,n=re.subn(r'<style>\s*/\* 2026-11-06: user-requested fixes only: Quiz option size, Learn audio alignment, Progress columns\. \*/.*?</style>','',s,count=1,flags=re.S)
+              assert n==1
+          css="<style>\n/* 2026-11-06: user-requested fixes only: Quiz option size, Learn audio alignment, Progress columns. */\n#specialView .review-quiz-options {gap:9px!important;}\n#specialView .review-quiz-option {\n  display:flex!important;\n  align-items:center!important;\n  justify-content:space-between!important;\n  min-height:0!important;\n  height:auto!important;\n  padding:11px 12px!important;\n  font-size:17px!important;\n  line-height:1.28!important;\n  font-weight:650!important;\n  gap:10px!important;\n}\n#specialView .review-quiz-option .quiz-option-en,\n#specialView .review-quiz-option .quiz-option-zh {\n  font-size:17px!important;\n  line-height:1.28!important;\n  font-weight:650!important;\n}\n@media (max-width:1000px), (pointer:coarse) {\n  #learningView > .mobile-word-card,\n  #learningView > .mobile-sentence-card {\n    position:relative!important;\n    overflow:visible!important;\n  }\n  #learningView .mobile-word-card .learn-audio-stack,\n  #learningView .mobile-sentence-card .learn-audio-stack {\n    position:absolute!important;\n    top:7px!important;\n    right:9px!important;\n    left:auto!important;\n    bottom:auto!important;\n    transform:none!important;\n    margin:0!important;\n    width:36px!important;\n    flex-basis:auto!important;\n    gap:4px!important;\n    display:flex!important;\n    flex-direction:column!important;\n    z-index:5!important;\n  }\n  #learningView .mobile-word-card .learn-audio-stack > button,\n  #learningView .mobile-sentence-card .learn-audio-stack > button {\n    width:36px!important;\n    height:32px!important;\n    min-width:36px!important;\n    min-height:32px!important;\n    padding:0!important;\n    font-size:17px!important;\n    line-height:1!important;\n    flex:none!important;\n  }\n  #learningView .mobile-word-card .text-wrap,\n  #learningView .mobile-sentence-card .sentence-mobile-content {padding-right:53px!important;}\n}\n.progress-scroll {overflow-x:auto!important;}\n.progress-scroll .progress-table {table-layout:auto!important;min-width:500px!important;}\n.progress-scroll .progress-table td,.progress-scroll .progress-table th {\n  font-size:14px!important;white-space:nowrap!important;\n  overflow-wrap:normal!important;word-break:normal!important;\n}\n</style>"
           assert s.count("</head>")==1
           s=s.replace("</head>",css+"\n</head>",1)
           p.write_text(s,encoding="utf-8")
-          print("Progress status column removed; five columns no wrap, legible type and horizontal scrolling.")
+          print("Verification: Status heading",s.count("<th>Status</th>"),"Progress row status cell",s.count("<td>${status}</td>"))
+          print("Verified Learn audio button IDs and Quiz audio ID; adjusted only CSS and Progress columns.")
           PY
       - name: Commit only index.html
         shell: bash
@@ -61,5 +52,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --check
-          git commit -m "Remove Progress Status column and improve table legibility"
+          git commit -m "Fix Quiz option dimensions and Learn audio position; verify five Progress columns"
           git push
