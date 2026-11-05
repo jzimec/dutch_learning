@@ -1,0 +1,17 @@
+{
+  "name": "Dutch Learning",
+  "short_name": "Dutch Learning",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#e8f6ff",
+  "theme_color": "#1769ff",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
