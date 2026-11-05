@@ -1023,6 +1023,70 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
 .progress-scroll .progress-table th:nth-child(5),
 .progress-scroll .progress-table td:nth-child(5) {min-width:74px!important;text-align:center!important}
 </style>
+<style>
+/* 2026-11-06: user-requested fixes only: Quiz option size, Learn audio alignment, Progress columns. */
+#specialView .review-quiz-options {gap:9px!important;}
+#specialView .review-quiz-option {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  min-height:0!important;
+  height:auto!important;
+  padding:11px 12px!important;
+  font-size:17px!important;
+  line-height:1.28!important;
+  font-weight:650!important;
+  gap:10px!important;
+}
+#specialView .review-quiz-option .quiz-option-en,
+#specialView .review-quiz-option .quiz-option-zh {
+  font-size:17px!important;
+  line-height:1.28!important;
+  font-weight:650!important;
+}
+@media (max-width:1000px), (pointer:coarse) {
+  #learningView > .mobile-word-card,
+  #learningView > .mobile-sentence-card {
+    position:relative!important;
+    overflow:visible!important;
+  }
+  #learningView .mobile-word-card .learn-audio-stack,
+  #learningView .mobile-sentence-card .learn-audio-stack {
+    position:absolute!important;
+    top:7px!important;
+    right:9px!important;
+    left:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    margin:0!important;
+    width:36px!important;
+    flex-basis:auto!important;
+    gap:4px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    z-index:5!important;
+  }
+  #learningView .mobile-word-card .learn-audio-stack > button,
+  #learningView .mobile-sentence-card .learn-audio-stack > button {
+    width:36px!important;
+    height:32px!important;
+    min-width:36px!important;
+    min-height:32px!important;
+    padding:0!important;
+    font-size:17px!important;
+    line-height:1!important;
+    flex:none!important;
+  }
+  #learningView .mobile-word-card .text-wrap,
+  #learningView .mobile-sentence-card .sentence-mobile-content {padding-right:53px!important;}
+}
+.progress-scroll {overflow-x:auto!important;}
+.progress-scroll .progress-table {table-layout:auto!important;min-width:500px!important;}
+.progress-scroll .progress-table td,.progress-scroll .progress-table th {
+  font-size:14px!important;white-space:nowrap!important;
+  overflow-wrap:normal!important;word-break:normal!important;
+}
+</style>
 </head>
 <body>
 <div class="app-shell">
