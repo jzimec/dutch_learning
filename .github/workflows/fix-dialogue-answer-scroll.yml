@@ -33,7 +33,7 @@ jobs:
           replace_once("const titleMap={",
                        "dialogueAnswerChecked=true;\\n    const titleMap={")
           a=s.index('(function enableDialogueSwipe(){')
-          b=s.index(" document.addEventListener('keydown',e=>{",a)
+          b=s.index("document.addEventListener('keydown',e=>{",a)
           original=s[a:b]
           assert "edgeAtStart" in original and "dialogueMove(next?1:-1)" in original
           new="""(function enableDialogueSwipe(){
