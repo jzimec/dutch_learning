@@ -1,0 +1,26 @@
+name: Inspect Dialogue swipe behavior
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-dialogue-swipe.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("index.html").read_text(encoding="utf-8")
+          lines=s.splitlines()
+          words=['touchstart','touchend','touchmove','dialogueNext','dialoguePrev','dialoguePage','dialogue-wrap','dialogue-content','g.view===\'dialogue\'','dataset.view','scrollHeight']
+          ix=[i for i,l in enumerate(lines) if any(w in l for w in words)]
+          out=set()
+          for i in ix:
+              for j in range(max(0,i-5),min(len(lines),i+12)):out.add(j)
+          print('total lines',len(lines),'matches',len(ix))
+          for i in sorted(out):
+              x=lines[i]
+              if len(x)>300:x=x[:300]+'... [truncated]'
+              print(f'{i+1}: {x}')
+          PY
