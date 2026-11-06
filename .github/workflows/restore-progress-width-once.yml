@@ -1,0 +1,46 @@
+name: Restore Progress table original width once
+on:
+  push:
+    paths:
+      - '.github/workflows/restore-progress-width-once.yml'
+permissions:
+  contents: write
+jobs:
+  restore-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove only Progress widening overrides
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path("index.html")
+          s=p.read_text(encoding="utf-8")
+          original=s
+          # Undo the table widening stylesheet added earlier; keep the five-column HTML intact.
+          pat1=r'<style>\s*/\* Progress five-column legibility: keep words intact; allow sideways scrolling on narrow screens\. \*/.*?</style>\s*'
+          s,n1=re.subn(pat1,"",s,count=1,flags=re.S)
+          assert n1==1,"Old Progress width-increasing stylesheet not found; abort"
+          # Remove only Progress CSS from the later combined Quiz/Learn/Progress stylesheet.
+          pat2=r'\.progress-scroll \{overflow-x:auto!important;\}\s*\.progress-scroll \.progress-table \{table-layout:auto!important;min-width:500px!important;\}\s*\.progress-scroll \.progress-table td,\.progress-scroll \.progress-table th \{\s*font-size:14px!important;white-space:nowrap!important;\s*overflow-wrap:normal!important;word-break:normal!important;\s*\}'
+          s,n2=re.subn(pat2,"",s,count=1,flags=re.S)
+          assert n2==1,"Later Progress width CSS not found; abort"
+          assert '<th>Status</th>' not in s
+          assert s.count('<th>Wrong</th></tr>')==1
+          assert s.count('id="reviewQuizAudio"')==1
+          assert s.count('id="wordAudio"')==1
+          assert len(original)>len(s)
+          p.write_text(s,encoding="utf-8")
+          print("Removed only previously injected Progress table widening CSS; Status removal and all other CSS/scripts preserved.")
+          PY
+      - name: Commit index.html only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Restore original Progress table width without other changes"
+          git push
