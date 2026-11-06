@@ -1,0 +1,40 @@
+name: Align Dialogue practice pronunciation buttons right
+on:
+  push:
+    paths:
+      - '.github/workflows/align-dialogue-practice-audio-once.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Change one Dialogue feedback CSS declaration only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='.dialogue-one-screen .dialogue-feedback .dialogue-speakers{margin-top:2px}'
+          new='.dialogue-one-screen .dialogue-feedback .dialogue-speakers{margin-top:2px;justify-content:flex-end}'
+          assert s.count(old)==1, 'Dialogue pronunciation CSS selector changed'
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          print('Modified exactly one CSS rule in Dialogue practice feedback')
+          PY
+          git diff --check
+          python3 - <<'PY'
+          import subprocess
+          from pathlib import Path
+          before=subprocess.check_output(['git','show','HEAD:index.html']).decode('utf-8')
+          after=Path('index.html').read_text(encoding='utf-8')
+          assert after==before.replace('.dialogue-one-screen .dialogue-feedback .dialogue-speakers{margin-top:2px}', '.dialogue-one-screen .dialogue-feedback .dialogue-speakers{margin-top:2px;justify-content:flex-end}',1)
+          print('Verified no other content, layout, JavaScript or auth changes')
+          PY
+      - name: Commit only intended change
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Right-align Dialogue practice feedback pronunciation controls"
+          git push
