@@ -1575,6 +1575,7 @@ function answerGrammar(j){if(grammarAnswered)return;const l=GRAMMAR_LESSONS[gram
 // Offline dialogue module: one prompt/answer pair for every vocabulary entry.
 // Voice transcription uses the device browser's SpeechRecognition when available.
 let dialogueCat=null, dialogueIndex=0, dialogueMode='text', dialogueRecognizer=null;
+let dialogueAnswerChecked=false;
 function dialogueEscape(value){return String(value==null?'':value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dialogueNormalize(v){return String(v||'').toLocaleLowerCase('nl-NL').normalize('NFC').replace(/[^\p{L}\p{N}\s]/gu,' ').replace(/\s+/g,' ').trim();}
 function dialogueSimilarity(a,b){
@@ -1586,6 +1587,7 @@ function dialogueSimilarity(a,b){
 function dialogueStopMic(){if(dialogueRecognizer){try{dialogueRecognizer.abort();}catch(e){}dialogueRecognizer=null;}}
 function dialogueCurrent(){const arr=lessonsData[dialogueCat]||[];return arr[dialogueIndex]||null;}
 function showDialogue(cat,idx){
+ dialogueAnswerChecked=false;
  dialogueStopMic();dialogueCat=cat&&lessonsData[cat]?cat:(category||Object.keys(lessonsData)[0]);
  const arr=lessonsData[dialogueCat]||[];if(!arr.length){showSpecial('<h2>Dialogue</h2><p>No vocabulary available.</p>','dialogue');return;}
  dialogueIndex=Math.max(0,Math.min(arr.length-1,Number.isFinite(idx)?idx:dialogueIndex));
@@ -1610,7 +1612,7 @@ function showDialogue(cat,idx){
 }
 // Dialogue vocabulary navigation: same vertical gesture as Learn, with input-safe handling.
 function dialogueMove(delta){
- if(activeView!=='dialogue'||!dialogueCat)return;
+ if(activeView!=='dialogue'||!dialogueCat||!dialogueAnswerChecked)return;
  const arr=lessonsData[dialogueCat]||[];
  if(!arr.length)return;
  const nextIndex=dialogueIndex+delta;
@@ -1621,37 +1623,40 @@ function dialogueMove(delta){
  const panel=document.getElementById('specialView');if(panel)panel.scrollTop=0;
 }
 (function enableDialogueSwipe(){
- let sx=null,sy=null,started=0,ignore=false,edgeAtStart=null;
- const reset=()=>{sx=null;sy=null;started=0;ignore=false;edgeAtStart=null;};
+ let start=null;
+ const reset=()=>{start=null;};
  const interactive=el=>!!(el&&el.closest&&el.closest('button,a,input,select,textarea,label,[role="button"],.mobile-bottom-nav,.nav-action'));
- const scrollBox=()=>document.getElementById('specialView');
+ function scrollContainer(){
+   const panel=document.getElementById('specialView');
+   const doc=document.scrollingElement||document.documentElement;
+   // Dialogue may scroll inside #specialView or at document level depending
+   // on viewport layout. Choose a container that can actually scroll.
+   if(panel&&panel.scrollHeight>panel.clientHeight+6&&
+      /(auto|scroll)/.test(getComputedStyle(panel).overflowY))return panel;
+   return doc;
+ }
+ function position(box){
+   const top=box.scrollTop;
+   const max=Math.max(0,box.scrollHeight-box.clientHeight);
+   return {overflow:max>6,top:top<=4,bottom:top>=max-4};
+ }
  document.addEventListener('touchstart',e=>{
-   reset();if(activeView!=='dialogue'||e.touches.length!==1)return;
-   ignore=interactive(e.target);if(ignore)return;
-   sx=e.touches[0].clientX;sy=e.touches[0].clientY;started=Date.now();
-   const box=scrollBox();
-   if(!box)return;
-   // Use the scroll position at the BEGINNING of the gesture, never the end.
-   // Swiping to the bottom this time must not also change vocabulary.
-   const overflow=box.scrollHeight>box.clientHeight+4;
-   const tolerance=4;
-   edgeAtStart={box,overflow,top:box.scrollTop<=tolerance,
-     bottom:box.scrollTop+box.clientHeight>=box.scrollHeight-tolerance};
+   reset();
+   if(activeView!=='dialogue'||e.touches.length!==1||interactive(e.target))return;
+   const box=scrollContainer();
+   start={x:e.touches[0].clientX,y:e.touches[0].clientY,time:Date.now(),
+     box,edge:position(box)};
  },{passive:true,capture:true});
  document.addEventListener('touchend',e=>{
-   if(sy===null||ignore||activeView!=='dialogue'||!e.changedTouches.length){reset();return;}
-   const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
-   const valid=Math.abs(dy)>=60&&Math.abs(dy)>Math.abs(dx)*1.2&&Date.now()-started<1200;
-   if(valid&&edgeAtStart&&edgeAtStart.box.isConnected){
-     const next=dy<0,box=edgeAtStart.box;
-     const stillAtEdge=next?box.scrollTop+box.clientHeight>=box.scrollHeight-4:box.scrollTop<=4;
-     // Non-overflowing Dialogue pages keep the original one-swipe navigation.
-     // Overflowing pages navigate only on a NEW swipe that starts at the edge.
-     if(!edgeAtStart.overflow||(stillAtEdge&&(next?edgeAtStart.bottom:edgeAtStart.top))){
-       dialogueMove(next?1:-1);
-     }
+   const g=start;reset();
+   if(!g||activeView!=='dialogue'||!e.changedTouches.length||!dialogueAnswerChecked)return;
+   const dx=e.changedTouches[0].clientX-g.x,dy=e.changedTouches[0].clientY-g.y;
+   if(Math.abs(dy)<60||Math.abs(dy)<=Math.abs(dx)*1.2||Date.now()-g.time>=1200)return;
+   const next=dy<0,now=position(g.box);
+   // Never change lesson on the gesture that merely reaches a scroll edge.
+   if(!g.edge.overflow||(next?g.edge.bottom&&now.bottom:g.edge.top&&now.top)){
+     dialogueMove(next?1:-1);
    }
-   reset();
  },{passive:true,capture:true});
  document.addEventListener('touchcancel',reset,{passive:true,capture:true});
 document.addEventListener('keydown',e=>{
@@ -1672,7 +1677,8 @@ function dialogueCheckOffline(value,isVoice){
  const l=dialogueCurrent(),result=document.getElementById('dialogueResult');if(!result||!l)return;
  const text=String(value||'').trim(),target=l.sentenceNl||l.nl;
  if(!text){result.innerHTML='<div class="dialogue-feedback warn">请先输入或说出一句荷兰语。</div>';return;}
- const similarity=dialogueSimilarity(text,target);
+ dialogueAnswerChecked=true;
+  const similarity=dialogueSimilarity(text,target);
  const word=dialogueNormalize(l.nl),spoken=dialogueNormalize(text);
  const hasWord=word.length>1&&(' '+spoken+' ').includes(' '+word+' ');
  const knownError=/\bik wilt\b/i.test(text)?'“Ik wilt” 应改为 “Ik wil”。':/\bhij heb\b/i.test(text)?'“Hij heb” 应改为 “Hij heeft”。':/\bik heeft\b/i.test(text)?'“Ik heeft” 应改为 “Ik heb”。':null;
@@ -1756,6 +1762,7 @@ result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与�
     const data=await reply.json();
     if(!data||!['correct','needs_revision','off_topic','uncertain'].includes(data.verdict))
       throw new Error('AI 返回了无法识别的结果。');
+    dialogueAnswerChecked=true;
     const titleMap={
       correct:'✓ 正确 · Goed gedaan!',
       needs_revision:'需要修改',
