@@ -1678,12 +1678,13 @@ async function dialogueCheck(value,isVoice){
     dialogueCheckOffline(value,isVoice);
     return;
   }
-  let token='';
-  try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}
+  let token=window.__dutchDialogueAiToken||'';
+  if(!token){try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}}
   if(!token){
     const entered=window.prompt('请输入 Dialogue AI 访问密码（Supabase 中设置的 DIALOGUE_AI_ACCESS_TOKEN）。仅在本次浏览器会话中保存。');
     if(!entered){result.innerHTML='<div class="dialogue-feedback warn">AI 检查尚未授权，未提交句子。你可以再次点击“检查回答”。</div>';return;}
     token=entered.trim();
+    window.__dutchDialogueAiToken=token;
     try{sessionStorage.setItem('dutchDialogueAiToken',token);}catch(e){}
   }
   result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与句意…</div>';
@@ -1704,6 +1705,7 @@ async function dialogueCheck(value,isVoice){
     });
     if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;
     if(reply.status===401){
+      window.__dutchDialogueAiToken='';
       try{sessionStorage.removeItem('dutchDialogueAiToken');}catch(e){}
       throw new Error('访问密码无效；已清除本次会话的密码，请重新点击检查。');
     }
