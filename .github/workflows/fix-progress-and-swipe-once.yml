@@ -1,0 +1,51 @@
+name: Fix mobile Progress width and module swipe once
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-progress-and-swipe-once.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix only Progress mobile widths and module swipe script
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          original=s
+          assert s.count('id="reviewQuizAudio"')==1
+          assert s.count('<th>Wrong</th></tr>')==1
+          assert s.count('<th>Status</th>')==0
+          assert s.count('class="mobile-nav-action nav-action')==6
+          start=s.index('<script>\n/* Module swipe navigation only; existing click navigation and vertical gestures remain unchanged. */')
+          end=s.index('</script>',start)+len('</script>')
+          assert s.count('function enableHorizontalModuleSwipe')==1
+          assert end-start<4500
+          replacement="<script>\n/* Module swipe navigation only; existing click navigation and vertical gestures remain unchanged. */\n(function enableHorizontalModuleSwipe(){\n  const navSelector='.mobile-bottom-nav .mobile-nav-action[data-view]';\n  let start=null;\n  const blocked='input,textarea,select,[contenteditable=\"true\"],.mobile-bottom-nav,.nav-action';\n  document.addEventListener('touchstart',function(e){\n    start=null;\n    if(e.touches.length!==1 || !window.matchMedia('(max-width:1000px), (pointer:coarse)').matches)return;\n    if(e.target.closest(blocked))return;\n    for(let el=e.target;el && el!==document.body;el=el.parentElement){\n      if(el.scrollWidth>el.clientWidth+12 && ['auto','scroll'].includes(getComputedStyle(el).overflowX))return;\n    }\n    const t=e.touches[0];\n    start={x:t.clientX,y:t.clientY,time:Date.now(),view:typeof activeView==='string'?activeView:null};\n  },{passive:true});\n  document.addEventListener('touchend',function(e){\n    if(!start || e.changedTouches.length!==1)return;\n    const t=e.changedTouches[0],dx=t.clientX-start.x,dy=t.clientY-start.y;\n    const valid=Math.abs(dx)>65 && Math.abs(dx)>Math.abs(dy)*1.35 && Date.now()-start.time<1400;\n    const startingView=start.view;start=null;\n    if(!valid || typeof activeView!=='string' || activeView!==startingView)return;\n    const tabs=Array.from(document.querySelectorAll(navSelector));\n    const current=startingView==='learn'?'home':startingView;\n    const i=tabs.findIndex(tab=>tab.dataset.view===current);\n    if(i<0)return;\n    const next=tabs[i+(dx<0?1:-1)];\n    if(next)next.click();\n  },{passive:true});\n  document.addEventListener('touchcancel',function(){start=null;},{passive:true});\n})();\n</script>"
+          s=s[:start]+replacement+s[end:]
+          assert s.count('function enableHorizontalModuleSwipe')==1
+          css="<style>\n/* Mobile Progress five columns fit viewport; no horizontal table overflow. */\n@media (max-width:1000px), (pointer:coarse) {\n  #specialView .progress-scroll {width:100%!important;max-width:100%!important;overflow-x:hidden!important;}\n  #specialView .progress-scroll .progress-table {\n    box-sizing:border-box!important;\n    width:100%!important;min-width:0!important;max-width:100%!important;\n    table-layout:fixed!important;\n  }\n  #specialView .progress-table th,\n  #specialView .progress-table td {\n    box-sizing:border-box!important;\n    min-width:0!important;max-width:none!important;\n    padding:8px 3px!important;\n    font-size:clamp(11px,3vw,13px)!important;\n    line-height:1.35!important;\n    white-space:normal!important;\n    overflow-wrap:normal!important;\n    word-break:normal!important;\n    overflow:hidden!important;\n  }\n  #specialView .progress-table th:nth-child(1),#specialView .progress-table td:nth-child(1){width:17%!important;text-align:center!important;}\n  #specialView .progress-table th:nth-child(2),#specialView .progress-table td:nth-child(2){width:29%!important;}\n  #specialView .progress-table th:nth-child(3),#specialView .progress-table td:nth-child(3){width:28%!important;}\n  #specialView .progress-table th:nth-child(4),#specialView .progress-table td:nth-child(4){width:13%!important;text-align:center!important;}\n  #specialView .progress-table th:nth-child(5),#specialView .progress-table td:nth-child(5){width:13%!important;text-align:center!important;}\n}\n</style>"
+          assert '/* Mobile Progress five columns fit viewport; no horizontal table overflow. */' not in s
+          assert s.count('</head>')==1
+          s=s.replace('</head>',css+'\n</head>',1)
+          assert s.count('id="reviewQuizAudio"')==1 and s.count('id="wordAudio"')==1
+          assert s.count('class="mobile-nav-action nav-action')==6
+          p.write_text(s,encoding='utf-8')
+          print('Applied exactly two targeted changes: five-column Progress mobile table width and horizontal module gesture.')
+          print('Status column remains removed; six tab buttons unchanged; rest of HTML unchanged.')
+          PY
+      - name: Commit index.html only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Fit Progress five columns and enable swipe in module content"
+          git push
