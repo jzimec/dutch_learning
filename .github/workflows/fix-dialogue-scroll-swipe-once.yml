@@ -17,7 +17,7 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           start=s.index('(function enableDialogueSwipe(){')
-          end=s.index("  document.addEventListener('keydown',e=>{",start)
+          end=s.index("document.addEventListener('keydown',e=>{",start)
           original=s[start:end]
           assert original.count('dialogueMove(dy<0?1:-1)')==1
           assert "document.addEventListener('touchstart'" in original
