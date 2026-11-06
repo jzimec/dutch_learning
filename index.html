@@ -1704,24 +1704,25 @@ async function dialogueCheck(value,isVoice){
   const answer=String(value||'').trim();
   if(!answer){dialogueCheckOffline(value,isVoice);return;}
   const endpoint=String(window.DUTCH_DIALOGUE_AI_ENDPOINT||'').trim();
-  if(!/^https:\/\/[-a-z0-9]+\.supabase\.co\/functions\/v1\/dialogue-check\/?$/i.test(endpoint)){
+  if(!/^https:\/\/[-a-z0-9]+\.supabase\.co\/functions\/v1\/dialogue-check-v2\/?$/i.test(endpoint)){
     dialogueCheckOffline(value,isVoice);
     return;
   }
-  let token=window.__dutchDialogueAiToken||'';
-  if(!token){
-    const entered=await dialogueAskAccessPassword();
-    if(!entered){result.innerHTML='<div class="dialogue-feedback warn">AI 检查尚未授权，未提交句子。</div>';return;}
-    token=entered.trim();
-    window.__dutchDialogueAiToken=token;
-  }
-  result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与句意…</div>';
+  let token='';
+try{
+  if(!window.dutchAuth)throw new Error('登录组件未加载，请刷新网页重试');
+  token=await window.dutchAuth.ensure();
+}catch(e){
+  result.innerHTML='<div class="dialogue-feedback warn">'+dialogueEscape(e?.message||'尚未登录')+'</div>';
+  return;
+}
+result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与句意…</div>';
   const currentResult=result, currentLesson=l, controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),20000);
   try{
     const reply=await fetch(endpoint,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-dialogue-token':token},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
       body:JSON.stringify({
         answer:answer.slice(0,500),
         target_word:String(l.nl||''),
@@ -1732,10 +1733,7 @@ async function dialogueCheck(value,isVoice){
       cache:'no-store'
     });
     if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;
-    if(reply.status===401){
-      window.__dutchDialogueAiToken='';
-      throw new Error('访问密码无效；已清除本次会话的密码，请重新点击检查。');
-    }
+    if(reply.status===401)throw new Error('登录已失效，请重新登录。');
     if(!reply.ok)throw new Error(reply.status===503?'Supabase AI 服务尚未配置。':'AI 服务暂时不可用（HTTP '+reply.status+'）。');
     const data=await reply.json();
     if(!data||!['correct','needs_revision','off_topic','uncertain'].includes(data.verdict))
@@ -1968,5 +1966,6 @@ if ((location.protocol === "https:" || location.hostname === "localhost") && "se
 })();
 </script>
 <script src="./dialogue-ai-config.js?v=1"></script>
+<script src="./dutch-auth.js?v=1"></script>
 </body>
 </html>
