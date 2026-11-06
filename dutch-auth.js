@@ -45,7 +45,7 @@ function loadClient(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
       client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
-      client.auth.onAuthStateChange((_event,session)=>{if(!session)profile=null;syncButton();});
+      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;syncButton();if(event==="PASSWORD_RECOVERY")queueMicrotask(()=>showPasswordRecovery());});
       resolve(client);
     }catch(e){reject(e);}
    }
@@ -85,7 +85,7 @@ async function ensure(){
    '<label>邮箱</label><input id="da-email" type="email" autocomplete="username" />'+
    '<label>密码</label><input id="da-password" type="password" autocomplete="current-password" />'+
    '<div id="da-status" class="da-error"></div>'+
-   '<button id="da-signin">登录</button><button id="da-signup" class="da-secondary">注册新账户</button><button id="da-cancel" class="da-secondary">取消</button>'+
+   '<button id="da-signin">登录</button><button id="da-signup" class="da-secondary">注册新账户</button><button id="da-forgot" class="da-secondary">忘记密码？</button><button id="da-cancel" class="da-secondary">取消</button>'+
    '<p class="da-note">新账户需要管理员批准才能使用 AI。请勿在此输入 Supabase 密钥或 OpenAI API Key。</p>';
   const q=x=>body.querySelector(x);
   q("#da-cancel").onclick=()=>{close();reject(Error("已取消登录"));};
@@ -110,9 +110,56 @@ async function ensure(){
    }catch(e){message(e.message||"登录失败");}
    finally{if(dialog){q("#da-signin").disabled=q("#da-signup").disabled=false;}}
   }
+  q("#da-forgot").onclick=()=>forgotPassword(q("#da-email").value.trim());
   q("#da-signin").onclick=()=>submit(false);
   q("#da-signup").onclick=()=>submit(true);
  });
+}
+
+const RECOVERY_URL="https://jzimec.github.io/dutch_learning/";
+async function forgotPassword(existingEmail=""){
+ const body=createPanel("Dutch Learning · 重置密码");
+ body.innerHTML='<p class="da-note">输入注册邮箱，我们会发送密码重置邮件。请在邮件中点击链接返回 App。</p>'+
+  '<label>注册邮箱</label><input type="email" id="da-reset-email" autocomplete="email" />'+
+  '<div id="da-status" class="da-error"></div>'+
+  '<button id="da-send-reset">发送重置邮件</button><button class="da-secondary" id="da-reset-back">返回登录</button>';
+ body.querySelector("#da-reset-email").value=existingEmail;
+ body.querySelector("#da-reset-back").onclick=()=>{close();account();};
+ body.querySelector("#da-send-reset").onclick=async()=>{
+  const email=body.querySelector("#da-reset-email").value.trim();
+  if(!email||!email.includes("@")){message("请输入正确的邮箱地址");return;}
+  const btn=body.querySelector("#da-send-reset");btn.disabled=true;
+  try{
+   const c=await loadClient();
+   const {error}=await c.auth.resetPasswordForEmail(email,{redirectTo:RECOVERY_URL});
+   if(error)throw error;
+   message("如果邮箱已注册，重置邮件将发送至该邮箱。请查看收件箱或垃圾邮件。");
+  }catch(e){message("发送失败："+(e.message||"请重试"));}
+  finally{btn.disabled=false;}
+ };
+}
+async function showPasswordRecovery(){
+ const body=createPanel("Dutch Learning · 设置新密码");
+ body.innerHTML='<p class="da-note">密码重置链接已验证。请输入新密码。</p>'+
+  '<label>新密码</label><input id="da-new-password" type="password" minlength="8" autocomplete="new-password" />'+
+  '<label>再次输入</label><input id="da-confirm-password" type="password" minlength="8" autocomplete="new-password" />'+
+  '<div id="da-status" class="da-error"></div>'+
+  '<button id="da-save-password">保存新密码</button>';
+ body.querySelector("#da-save-password").onclick=async()=>{
+  const pw=body.querySelector("#da-new-password").value;
+  const confirm=body.querySelector("#da-confirm-password").value;
+  if(pw.length<8){message("密码至少需要 8 个字符");return;}
+  if(pw!==confirm){message("两次输入的密码不一致");return;}
+  const btn=body.querySelector("#da-save-password");btn.disabled=true;
+  try{
+   const c=await loadClient();
+   const {error}=await c.auth.updateUser({password:pw});
+   if(error)throw error;
+   message("密码已重置成功。现在可以使用新密码登录。");
+   btn.textContent="完成";
+   btn.disabled=false;btn.onclick=()=>{close();account();};
+  }catch(e){message("修改失败："+(e.message||"请重试"));btn.disabled=false;}
+ };
 }
 async function account(){
  const body=createPanel("Dutch Learning · 我的账户");
