@@ -1,0 +1,33 @@
+name: Validate startup login abort recovery
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-startup-auth-abort-once.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check auth syntax and update script version
+        run: |
+          node --check dutch-auth.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='<script src="./dutch-auth.js?v=4"></script>'
+          assert s.count(old)==1
+          s=s.replace(old,'<script src="./dutch-auth.js?v=5"></script>',1)
+          p.write_text(s,encoding='utf-8')
+          print('Only account script cache version updated')
+          PY
+      - name: Commit index.html only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Load fixed startup login after aborted session"
+          git push
