@@ -1,0 +1,30 @@
+name: Inspect Dialogue checker only
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-dialogue-ai-once.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect existing Dialogue logic without modifying UI
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          for key in ['function dialogueCheck','function dialogueSubmit','dialogueCheck(','dialogueRecognizer','dialogueInput','supabase','SUPABASE','dialogue-feedback','dialogueFeedback','dialogueCheckBtn','function showDialogue','dialogueInput.value','dialogueAnswer','dialogueExpected','dialogueUser']:
+           print('\n###',key,'count',s.count(key))
+           hits=list(re.finditer(re.escape(key),s,re.I))
+           for m in hits[:5]:
+            a=max(0,m.start()-250);b=min(len(s),m.start()+2800)
+            print(s[a:b].replace('\\n','\n')[:3000])
+          for m in list(re.finditer(r'function dialogueCheck\(',s)):
+           print('\nFULL CHECK',s[m.start():m.start()+11500])
+          for m in list(re.finditer(r'function showDialogue\(',s)):
+           print('\nFULL SHOW DIALOGUE',s[m.start():m.start()+8000])
+          PY
