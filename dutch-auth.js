@@ -73,11 +73,11 @@ async function getToken(){
  if(p?.permissions?.ai!==true)throw Error("管理员尚未开启你的 AI Dialogue 功能");
  return session.access_token;
 }
-async function ensure(requireAi=true){
+async function ensure(requireAi=true,skipSessionCheck=false){
  let token=null;
- if(requireAi){
+ if(!skipSessionCheck && requireAi){
   try{token=await getToken();}catch(e){if(/管理员|批准|尚未/.test(e.message))throw e;}
- }else{
+ }else if(!skipSessionCheck){
   try{
    const c=await loadClient();
    const {data:{session}}=await c.auth.getSession();
@@ -183,7 +183,7 @@ async function account(){
  try{
   const c=await loadClient();
   const {data:{session},error:sessionError}=await c.auth.getSession();
-  if(sessionError||!session?.user){close();await ensure(false);return;}
+  if(sessionError||!session?.user){close();await ensure(false,true);return;}
   const user=session.user;
   const p=await getProfile();
   body.innerHTML='<p><b>'+esc(user.email)+'</b></p><p>状态：'+esc(p?.status||"pending")+'</p>'+
@@ -243,20 +243,20 @@ async function syncButton(){
 function boot(){
  style();if(document.getElementById("da-account-btn"))return;
  const btn=document.createElement("button");btn.id="da-account-btn";btn.type="button";btn.textContent="登录";
- btn.onclick=()=>{if(btn.textContent==="账户")account();else ensure(false).catch(()=>{});};document.body.appendChild(btn);
+ btn.onclick=()=>{if(btn.textContent==="账户")account();else ensure(false,true).catch(()=>{});};document.body.appendChild(btn);
  // A password-recovery redirect must open the reset form instead of the normal login modal.
  const hash=window.location.hash||"";
  if(/(?:^|[&#])type=recovery(?:&|$)/.test(hash))return;
  loadClient().then(c=>c.auth.getSession()).then(({data:{session},error})=>{
    if(error||!session?.user){
      btn.textContent="登录";
-     if(!dialog)ensure(false).catch(()=>{});
+     if(!dialog)ensure(false,true).catch(()=>{});
    }else{
      btn.textContent="账户";
    }
  }).catch(()=>{
    btn.textContent="登录";
-   if(!dialog)ensure(false).catch(()=>{});
+   if(!dialog)ensure(false,true).catch(()=>{});
  });
 }
 window.dutchAuth={ensure,getToken,account};
