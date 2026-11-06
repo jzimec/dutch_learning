@@ -1,0 +1,81 @@
+name: Deploy Dutch Auth login integration
+on:
+  push:
+    paths:
+      - '.github/workflows/deploy-dutch-auth-integration.yml'
+permissions:
+  contents: write
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace only Dialogue AI access flow
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          assert s.count('async function dialogueCheck(value,isVoice){')==1
+          assert s.count('function dialogueCheckOffline(value,isVoice){')==1
+          head=s.index('async function dialogueCheck(value,isVoice){')
+          a=s.index("  let token=window.__dutchDialogueAiToken||'';",head)
+          b=s.index('  const currentResult=result',a)
+          old=s[a:b]
+          assert 'dialogueAskAccessPassword()' in old
+          new="""  let token='';
+          try{
+            if(!window.dutchAuth)throw new Error('登录组件未加载，请刷新网页重试');
+            token=await window.dutchAuth.ensure();
+          }catch(e){
+            result.innerHTML='<div class="dialogue-feedback warn">'+dialogueEscape(e?.message||'尚未登录')+'</div>';
+            return;
+          }
+          result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与句意…</div>';
+          """
+          s=s[:a]+new+s[b:]
+          a=s.index("    if(reply.status===401)",head)
+          b=s.index("    if(!reply.ok)",a)
+          block=s[a:b]
+          assert 'dutchDialogueAiToken' in block or '访问密码' in block or '__dutchDialogueAiToken' in block
+          s=s[:a]+"    if(reply.status===401)throw new Error('登录已失效，请重新登录。');\n"+s[b:]
+          h="headers:{'Content-Type':'application/json','x-dialogue-token':token},"
+          assert s.count(h)==1
+          s=s.replace(h,"headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},",1)
+          # Allow only the new audited v2 endpoint in the Dialogue checker.
+          a=s.index("  if(!/^https:",head)
+          b=s.index("    dialogueCheckOffline(value,isVoice);",a)
+          validator=s[a:b]
+          assert validator.count('dialogue-check')==1
+          s=s[:a]+validator.replace('dialogue-check','dialogue-check-v2')+s[b:]
+          tag='<script src="./dialogue-ai-config.js?v=1"></script>'
+          assert s.count(tag)==1 and 'dutch-auth.js?v=1' not in s
+          s=s.replace(tag,tag+'\n<script src="./dutch-auth.js?v=1"></script>',1)
+          Path('index.html').write_text(s,encoding='utf-8')
+          config=Path('dialogue-ai-config.js')
+          t=config.read_text(encoding='utf-8')
+          u='https://uxzyswpxwqcjvgkjlwhv.supabase.co/functions/v1/dialogue-check'
+          assert t.count(u)==1
+          config.write_text(t.replace(u,u+'-v2'),encoding='utf-8')
+          print('Dialogue login wired, other modules untouched')
+          PY
+      - name: Syntax and CDN checks
+        run: |
+          node --check dutch-auth.js
+          curl -LfsS --retry 2 --max-time 20 https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/dist/umd/supabase.min.js -o /tmp/dutch-supabase-umd.js
+          test -s /tmp/dutch-supabase-umd.js
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          a=s.index('async function dialogueCheck(value,isVoice){')
+          b=s.index('function dialogueStartMic(){',a)
+          Path('/tmp/dialogue-check.js').write_text(s[a:b],encoding='utf-8')
+          PY
+          node --check /tmp/dialogue-check.js
+      - name: Commit narrow modifications
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html dialogue-ai-config.js
+          git diff --cached --check
+          git commit -m "Use account login instead of shared Dialogue AI password"
+          git push
