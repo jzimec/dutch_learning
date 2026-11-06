@@ -51,7 +51,7 @@ function loadClient(){
    }
    if(window.supabase?.createClient){init();return;}
    const script=document.createElement("script");
-   script.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.94.1/dist/umd/supabase.min.js";
+   script.src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.95.0/dist/umd/supabase.min.js";
    script.onload=init;script.onerror=()=>reject(Error("登录组件加载失败，请检查网络"));
    document.head.appendChild(script);
  }).catch(e=>{loading=null;throw e;});
@@ -243,7 +243,7 @@ async function syncButton(){
 function boot(){
  style();if(document.getElementById("da-account-btn"))return;
  const btn=document.createElement("button");btn.id="da-account-btn";btn.type="button";btn.textContent="登录";
- btn.onclick=()=>account();document.body.appendChild(btn);
+ btn.onclick=()=>{if(btn.textContent==="账户")account();else ensure(false).catch(()=>{});};document.body.appendChild(btn);
  // A password-recovery redirect must open the reset form instead of the normal login modal.
  const hash=window.location.hash||"";
  if(/(?:^|[&#])type=recovery(?:&|$)/.test(hash))return;
