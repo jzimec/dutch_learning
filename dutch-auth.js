@@ -171,6 +171,10 @@ async function showPasswordRecovery(){
    const c=await loadClient();
    const {error}=await c.auth.updateUser({password:pw});
    if(error)throw error;
+   // Remove recovery credentials from the browser address after the reset.
+   if(window.location.hash.includes("access_token=")||window.location.hash.includes("type=recovery")){
+     history.replaceState(null,"",window.location.pathname+window.location.search);
+   }
    message("密码已重置成功。现在可以使用新密码登录。");
    btn.textContent="完成";
    btn.disabled=false;btn.onclick=()=>{close();account();};
@@ -246,17 +250,32 @@ function boot(){
  btn.onclick=()=>{if(btn.textContent==="账户")account();else ensure(false,true).catch(()=>{});};document.body.appendChild(btn);
  // A password-recovery redirect must open the reset form instead of the normal login modal.
  const hash=window.location.hash||"";
- if(/(?:^|[&#])type=recovery(?:&|$)/.test(hash))return;
+ // The recovery link returns with type=recovery in its hash. The Supabase
+ // client MUST be initialized on this path so it can process the token.
+ const recovering=/(?:^|[&#])type=recovery(?:&|$)/.test(hash);
  loadClient().then(c=>c.auth.getSession()).then(({data:{session},error})=>{
+   if(recovering){
+     if(!error&&session?.user)showPasswordRecovery();
+     else{
+       const body=createPanel("Dutch Learning · 重置链接无效");
+       body.innerHTML='<p class="da-note">重置链接已过期或无法验证，请重新申请密码重置邮件。</p><button id="da-recover-again">重新发送重置邮件</button>';
+       body.querySelector("#da-recover-again").onclick=()=>forgotPassword();
+     }
+     return;
+   }
    if(error||!session?.user){
      btn.textContent="登录";
      if(!dialog)ensure(false,true).catch(()=>{});
-   }else{
-     btn.textContent="账户";
-   }
+   }else btn.textContent="账户";
  }).catch(()=>{
-   btn.textContent="登录";
-   if(!dialog)ensure(false,true).catch(()=>{});
+   if(recovering){
+     const body=createPanel("Dutch Learning · 重置链接无法验证");
+     body.innerHTML='<p class="da-note">无法验证密码重置链接，请检查网络或重新申请重置邮件。</p><button id="da-recover-again">重新发送重置邮件</button>';
+     body.querySelector("#da-recover-again").onclick=()=>forgotPassword();
+   }else{
+     btn.textContent="登录";
+     if(!dialog)ensure(false,true).catch(()=>{});
+   }
  });
 }
 window.dutchAuth={ensure,getToken,account};
