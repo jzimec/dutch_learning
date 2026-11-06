@@ -24,10 +24,10 @@ jobs:
               s=s.replace(old,new,1)
           replace_once("let dialogueCat=null, dialogueIndex=0, dialogueMode='text', dialogueRecognizer=null;",
                        "let dialogueCat=null, dialogueIndex=0, dialogueMode='text', dialogueRecognizer=null;\nlet dialogueAnswerChecked=false;")
-          replace_once("function showDialogue(cat,idx){\n  dialogueStopMic();",
-                       "function showDialogue(cat,idx){\n  dialogueAnswerChecked=false;\n  dialogueStopMic();")
-          replace_once("function dialogueMove(delta){\n  if(activeView!=='dialogue'||!dialogueCat)return;",
-                       "function dialogueMove(delta){\n  if(activeView!=='dialogue'||!dialogueCat||!dialogueAnswerChecked)return;")
+          replace_once("function showDialogue(cat,idx){",
+                       "function showDialogue(cat,idx){\n dialogueAnswerChecked=false;")
+          replace_once("if(activeView!=='dialogue'||!dialogueCat)return;",
+                       "if(activeView!=='dialogue'||!dialogueCat||!dialogueAnswerChecked)return;")
           replace_once("  result.innerHTML='<div class=\"dialogue-feedback '+cls+'\"><b>'+dialogueEscape(title)+'</b>'",
                        "  dialogueAnswerChecked=true;\n  result.innerHTML='<div class=\"dialogue-feedback '+cls+'\"><b>'+dialogueEscape(title)+'</b>'")
           replace_once("    const titleMap={\n      correct:'✓ 正确 · Goed gedaan!',",
