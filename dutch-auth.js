@@ -73,10 +73,16 @@ async function getToken(){
  if(p?.permissions?.ai!==true)throw Error("管理员尚未开启你的 AI Dialogue 功能");
  return session.access_token;
 }
-async function ensure(){
+async function ensure(requireAi=true){
  let token=null;
- try{token=await getToken();}catch(e){
-   if(/管理员|批准|尚未/.test(e.message))throw e;
+ if(requireAi){
+  try{token=await getToken();}catch(e){if(/管理员|批准|尚未/.test(e.message))throw e;}
+ }else{
+  try{
+   const c=await loadClient();
+   const {data:{session}}=await c.auth.getSession();
+   if(session?.access_token)token=session.access_token;
+  }catch(e){}
  }
  if(token)return token;
  return new Promise((resolve,reject)=>{
@@ -104,7 +110,12 @@ async function ensure(){
      }
      const {error}=await c.auth.signInWithPassword({email,password});
      if(error)throw error;
-     const t=await getToken();
+     let t;
+     if(requireAi)t=await getToken();
+     else{
+       const {data:{session}}=await c.auth.getSession();
+       t=session?.access_token;
+     }
      if(!t)throw Error("请完成邮箱验证后再登录");
      close();syncButton();resolve(t);
    }catch(e){message(e.message||"登录失败");}
@@ -134,7 +145,12 @@ async function forgotPassword(existingEmail=""){
    const {error}=await c.auth.resetPasswordForEmail(email,{redirectTo:RECOVERY_URL});
    if(error)throw error;
    message("如果邮箱已注册，重置邮件将发送至该邮箱。请查看收件箱或垃圾邮件。");
-  }catch(e){message("发送失败："+(e.message||"请重试"));}
+  }catch(e){
+   const msg=String(e?.message||"请重试");
+   if(/rate limit|too many requests|over_email_send_rate_limit/i.test(msg)){
+    message("邮件发送次数已达到 Supabase 的限制，请稍后再试。不要连续点击发送。");
+   }else message("发送失败："+msg);
+  }
   finally{btn.disabled=false;}
  };
 }
@@ -166,7 +182,7 @@ async function account(){
  body.innerHTML='<div id="da-status" class="da-note">正在读取账户状态…</div>';
  try{
   const c=await loadClient(),{data:{user}}=await c.auth.getUser();
-  if(!user){close();await ensure();return;}
+  if(!user){close();await ensure(false);return;}
   const p=await getProfile();
   body.innerHTML='<p><b>'+esc(user.email)+'</b></p><p>状态：'+esc(p?.status||"pending")+'</p>'+
    '<p>AI 权限：'+(p?.permissions?.ai?"已开放":"未开放")+' · 每日上限：'+Number(p?.ai_daily_limit||0)+' 次</p>'+
@@ -218,6 +234,12 @@ function boot(){
  style();if(document.getElementById("da-account-btn"))return;
  const btn=document.createElement("button");btn.id="da-account-btn";btn.type="button";btn.textContent="登录";
  btn.onclick=()=>account();document.body.appendChild(btn);syncButton();
+ // A password-recovery redirect must open the reset form instead of the normal login modal.
+ const hash=window.location.hash||"";
+ if(/(?:^|[&#])type=recovery(?:&|$)/.test(hash))return;
+ loadClient().then(c=>c.auth.getSession()).then(({data:{session}})=>{
+   if(!session&&!dialog)ensure(false).catch(()=>{});
+ }).catch(()=>{if(!dialog)ensure(false).catch(()=>{});});
 }
 window.dutchAuth={ensure,getToken,account};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
