@@ -1,0 +1,55 @@
+name: Wire existing Dialogue Check button to optional AI backend
+on:
+  push:
+    paths:
+      - '.github/workflows/wire-dialogue-ai-once.yml'
+permissions:
+  contents: write
+jobs:
+  wire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace Dialogue checker only and load public endpoint URL
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("index.html")
+          s=p.read_text(encoding="utf-8")
+          assert s.count("function dialogueCheck(value,isVoice){")==1
+          assert s.count("function dialogueStartMic(){")==1
+          assert s.count("</body>")==1
+          assert "function dialogueCheckOffline(value,isVoice){" not in s
+          assert "dialogue-ai-config.js" not in s
+          s=s.replace("function dialogueCheck(value,isVoice){","function dialogueCheckOffline(value,isVoice){",1)
+          wrapper="async function dialogueCheck(value,isVoice){\n  const l=dialogueCurrent(), result=document.getElementById('dialogueResult');\n  if(!l||!result)return;\n  const answer=String(value||'').trim();\n  if(!answer){dialogueCheckOffline(value,isVoice);return;}\n  const endpoint=String(window.DUTCH_DIALOGUE_AI_ENDPOINT||'').trim();\n  if(!/^https:\\/\\/[-a-z0-9]+\\.supabase\\.co\\/functions\\/v1\\/dialogue-check\\/?$/i.test(endpoint)){\n    dialogueCheckOffline(value,isVoice);\n    return;\n  }\n  let token='';\n  try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}\n  if(!token){\n    const entered=window.prompt('请输入 Dialogue AI 访问密码（Supabase 中设置的 DIALOGUE_AI_ACCESS_TOKEN）。仅在本次浏览器会话中保存。');\n    if(!entered){result.innerHTML='<div class=\"dialogue-feedback warn\">AI 检查尚未授权，未提交句子。你可以再次点击“检查回答”。</div>';return;}\n    token=entered.trim();\n    try{sessionStorage.setItem('dutchDialogueAiToken',token);}catch(e){}\n  }\n  result.innerHTML='<div class=\"dialogue-feedback warn\">AI 正在检查语法与句意…</div>';\n  const currentResult=result, currentLesson=l, controller=new AbortController();\n  const timeout=setTimeout(()=>controller.abort(),20000);\n  try{\n    const reply=await fetch(endpoint,{\n      method:'POST',\n      headers:{'Content-Type':'application/json','x-dialogue-token':token},\n      body:JSON.stringify({\n        answer:answer.slice(0,500),\n        target_word:String(l.nl||''),\n        reference:String(l.sentenceNl||l.nl||''),\n        question:'Kun je een zin maken met het woord '+String(l.nl||'')+'?'\n      }),\n      signal:controller.signal,\n      cache:'no-store'\n    });\n    if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;\n    if(reply.status===401){\n      try{sessionStorage.removeItem('dutchDialogueAiToken');}catch(e){}\n      throw new Error('访问密码无效；已清除本次会话的密码，请重新点击检查。');\n    }\n    if(!reply.ok)throw new Error(reply.status===503?'Supabase AI 服务尚未配置。':'AI 服务暂时不可用（HTTP '+reply.status+'）。');\n    const data=await reply.json();\n    if(!data||!['correct','needs_revision','off_topic','uncertain'].includes(data.verdict))\n      throw new Error('AI 返回了无法识别的结果。');\n    const titleMap={\n      correct:'✓ 正确 · Goed gedaan!',\n      needs_revision:'需要修改',\n      off_topic:'语法可能正确，但不符合题意',\n      uncertain:'暂时无法确定'\n    };\n    const cls=data.verdict==='correct'?'good':'warn';\n    const corrected=String(data.corrected_dutch||'').trim();\n    const example=corrected||String(l.sentenceNl||l.nl||'');\n    const explanation=String(data.explanation_zh||'').trim();\n    const comments=String(data.feedback_zh||'').trim();\n    currentResult.innerHTML='<div class=\"dialogue-feedback '+cls+'\"><b>'+dialogueEscape(titleMap[data.verdict])+'</b>'+\n      '<div>'+dialogueEscape(comments)+'</div>'+\n      (explanation?'<div>'+dialogueEscape(explanation)+'</div>':'')+\n      (isVoice?'<div>提示：这里只判断语音识别后的文字，不评价发音准确度。</div>':'')+\n      '<div style=\"margin-top:9px\"><b>'+(corrected?'建议表达：':'参考表达：')+'</b><div>'+dialogueEscape(example)+'</div></div>'+\n      '<div class=\"dialogue-speakers\"><button class=\"dialogue-action\" id=\"dialogueFeedbackNormal\">🔊</button><button class=\"dialogue-action\" id=\"dialogueFeedbackSlow\">🐢</button></div></div>';\n    const normal=document.getElementById('dialogueFeedbackNormal');\n    const slow=document.getElementById('dialogueFeedbackSlow');\n    if(normal)normal.onclick=()=>speakDutch(example);\n    if(slow)slow.onclick=()=>speakDutch(example,true);\n  }catch(err){\n    if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;\n    const message=err instanceof Error?err.message:'连接 AI 服务失败';\n    currentResult.innerHTML='<div class=\"dialogue-feedback warn\"><b>AI 检查未完成</b><div>'+\n      dialogueEscape(message==='This operation was aborted'?'请求超时':message)+\n      '</div><button type=\"button\" class=\"dialogue-action\" id=\"dialogueOfflineFallback\">使用原有离线检查</button></div>';\n    const fallback=document.getElementById('dialogueOfflineFallback');\n    if(fallback)fallback.onclick=()=>dialogueCheckOffline(value,isVoice);\n  }finally{clearTimeout(timeout);}\n}\n"
+          s=s.replace("function dialogueStartMic(){",wrapper+"\nfunction dialogueStartMic(){",1)
+          s=s.replace("</body>",'<script src="./dialogue-ai-config.js?v=1"></script>\n</body>',1)
+          assert s.count("function dialogueCheck(value,isVoice){")==1
+          assert s.count("function dialogueCheckOffline(value,isVoice){")==1
+          assert s.count('id="dialogueCheckText"')==1
+          assert s.count('id="reviewQuizAudio"')==1
+          p.write_text(s,encoding="utf-8")
+          print("Wrapped Dialogue checker only. Other modules, styles and markup unchanged.")
+          PY
+      - name: Validate new JavaScript syntax and unchanged other features
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.index('async function dialogueCheck(value,isVoice){')
+          end=s.index('function dialogueStartMic(){',start)
+          Path('/tmp/dutch-dialogue-ai.js').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/dutch-dialogue-ai.js
+      - name: Commit only index.html
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Connect Dialogue checker to secure optional AI backend"
+          git push
