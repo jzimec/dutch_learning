@@ -1,0 +1,28 @@
+name: Inspect swipe event conflicts
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-swipe-events-once.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect event handlers and existing navigation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          for token in ['document.querySelectorAll(\'.nav-action\')', "addEventListener('click'",'function setActiveSide','function enableHorizontalModuleSwipe','function enableLearnSwipe','touch-action:','body.learn-swipe-enabled']:
+           print('\n***',token,'***')
+           all=list(re.finditer(re.escape(token),s))
+           print('count',len(all))
+           for m in all[-4:]:
+            t=s[max(0,m.start()-350):m.start()+850]
+            print(t.replace('\n',' ')[:1200])
+          print('END SCRIPTS',s[-5000:-1000].replace('\n',' ')[:4000])
+          PY
