@@ -181,8 +181,10 @@ async function account(){
  const body=createPanel("Dutch Learning · 我的账户");
  body.innerHTML='<div id="da-status" class="da-note">正在读取账户状态…</div>';
  try{
-  const c=await loadClient(),{data:{user}}=await c.auth.getUser();
-  if(!user){close();await ensure(false);return;}
+  const c=await loadClient();
+  const {data:{session},error:sessionError}=await c.auth.getSession();
+  if(sessionError||!session?.user){close();await ensure(false);return;}
+  const user=session.user;
   const p=await getProfile();
   body.innerHTML='<p><b>'+esc(user.email)+'</b></p><p>状态：'+esc(p?.status||"pending")+'</p>'+
    '<p>AI 权限：'+(p?.permissions?.ai?"已开放":"未开放")+' · 每日上限：'+Number(p?.ai_daily_limit||0)+' 次</p>'+
@@ -192,7 +194,15 @@ async function account(){
   body.querySelector("#da-logout").onclick=async()=>{await c.auth.signOut();profile=null;close();syncButton();};
   body.querySelector("#da-close").onclick=close;
   if(p?.is_admin)body.querySelector("#da-admin").onclick=()=>admin();
- }catch(e){body.textContent=e.message||"无法读取账户信息";}
+ }catch(e){
+  // Authentication/network failures should never trap the user in a raw error modal.
+  if(/abort|signal|fetch|network|session|jwt|token|登录/i.test(String(e?.message||""))){
+   close();ensure(false).catch(()=>{});
+  }else{
+   body.innerHTML='<p class="da-error">'+esc(e?.message||"账户信息暂时不可用")+'</p><button class="da-secondary" id="da-login-instead">返回登录</button>';
+   body.querySelector("#da-login-instead").onclick=()=>{close();ensure(false).catch(()=>{});};
+  }
+ }
 }
 async function admin(){
  const body=createPanel("Dutch Learning · 管理员后台");
@@ -233,13 +243,21 @@ async function syncButton(){
 function boot(){
  style();if(document.getElementById("da-account-btn"))return;
  const btn=document.createElement("button");btn.id="da-account-btn";btn.type="button";btn.textContent="登录";
- btn.onclick=()=>account();document.body.appendChild(btn);syncButton();
+ btn.onclick=()=>account();document.body.appendChild(btn);
  // A password-recovery redirect must open the reset form instead of the normal login modal.
  const hash=window.location.hash||"";
  if(/(?:^|[&#])type=recovery(?:&|$)/.test(hash))return;
- loadClient().then(c=>c.auth.getSession()).then(({data:{session}})=>{
-   if(!session&&!dialog)ensure(false).catch(()=>{});
- }).catch(()=>{if(!dialog)ensure(false).catch(()=>{});});
+ loadClient().then(c=>c.auth.getSession()).then(({data:{session},error})=>{
+   if(error||!session?.user){
+     btn.textContent="登录";
+     if(!dialog)ensure(false).catch(()=>{});
+   }else{
+     btn.textContent="账户";
+   }
+ }).catch(()=>{
+   btn.textContent="登录";
+   if(!dialog)ensure(false).catch(()=>{});
+ });
 }
 window.dutchAuth={ensure,getToken,account};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
