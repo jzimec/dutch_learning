@@ -29,9 +29,9 @@ jobs:
           replace_once("if(activeView!=='dialogue'||!dialogueCat)return;",
                        "if(activeView!=='dialogue'||!dialogueCat||!dialogueAnswerChecked)return;")
           replace_once("const similarity=dialogueSimilarity(text,target);",
-                       "dialogueAnswerChecked=true;\\n  const similarity=dialogueSimilarity(text,target);")
+                       "dialogueAnswerChecked=true;\n  const similarity=dialogueSimilarity(text,target);")
           replace_once("const titleMap={",
-                       "dialogueAnswerChecked=true;\\n    const titleMap={")
+                       "dialogueAnswerChecked=true;\n    const titleMap={")
           a=s.index('(function enableDialogueSwipe(){')
           b=s.index("document.addEventListener('keydown',e=>{",a)
           original=s[a:b]
