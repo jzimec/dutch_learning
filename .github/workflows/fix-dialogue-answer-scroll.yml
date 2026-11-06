@@ -37,43 +37,43 @@ jobs:
           original=s[a:b]
           assert "edgeAtStart" in original and "dialogueMove(next?1:-1)" in original
           new="""(function enableDialogueSwipe(){
- let start=null;
- const reset=()=>{start=null;};
- const interactive=el=>!!(el&&el.closest&&el.closest('button,a,input,select,textarea,label,[role="button"],.mobile-bottom-nav,.nav-action'));
- function scrollContainer(){
-   const panel=document.getElementById('specialView');
-   const doc=document.scrollingElement||document.documentElement;
-   // Dialogue may scroll inside #specialView or at document level depending
-   // on viewport layout. Choose a container that can actually scroll.
-   if(panel&&panel.scrollHeight>panel.clientHeight+6&&
-      /(auto|scroll)/.test(getComputedStyle(panel).overflowY))return panel;
-   return doc;
- }
- function position(box){
-   const top=box.scrollTop;
-   const max=Math.max(0,box.scrollHeight-box.clientHeight);
-   return {overflow:max>6,top:top<=4,bottom:top>=max-4};
- }
- document.addEventListener('touchstart',e=>{
-   reset();
-   if(activeView!=='dialogue'||e.touches.length!==1||interactive(e.target))return;
-   const box=scrollContainer();
-   start={x:e.touches[0].clientX,y:e.touches[0].clientY,time:Date.now(),
-     box,edge:position(box)};
- },{passive:true,capture:true});
- document.addEventListener('touchend',e=>{
-   const g=start;reset();
-   if(!g||activeView!=='dialogue'||!e.changedTouches.length||!dialogueAnswerChecked)return;
-   const dx=e.changedTouches[0].clientX-g.x,dy=e.changedTouches[0].clientY-g.y;
-   if(Math.abs(dy)<60||Math.abs(dy)<=Math.abs(dx)*1.2||Date.now()-g.time>=1200)return;
-   const next=dy<0,now=position(g.box);
-   // Never change lesson on the gesture that merely reaches a scroll edge.
-   if(!g.edge.overflow||(next?g.edge.bottom&&now.bottom:g.edge.top&&now.top)){
-     dialogueMove(next?1:-1);
-   }
- },{passive:true,capture:true});
- document.addEventListener('touchcancel',reset,{passive:true,capture:true});
-"""
+           let start=null;
+           const reset=()=>{start=null;};
+           const interactive=el=>!!(el&&el.closest&&el.closest('button,a,input,select,textarea,label,[role="button"],.mobile-bottom-nav,.nav-action'));
+           function scrollContainer(){
+             const panel=document.getElementById('specialView');
+             const doc=document.scrollingElement||document.documentElement;
+             // Dialogue may scroll inside #specialView or at document level depending
+             // on viewport layout. Choose a container that can actually scroll.
+             if(panel&&panel.scrollHeight>panel.clientHeight+6&&
+                /(auto|scroll)/.test(getComputedStyle(panel).overflowY))return panel;
+             return doc;
+           }
+           function position(box){
+             const top=box.scrollTop;
+             const max=Math.max(0,box.scrollHeight-box.clientHeight);
+             return {overflow:max>6,top:top<=4,bottom:top>=max-4};
+           }
+           document.addEventListener('touchstart',e=>{
+             reset();
+             if(activeView!=='dialogue'||e.touches.length!==1||interactive(e.target))return;
+             const box=scrollContainer();
+             start={x:e.touches[0].clientX,y:e.touches[0].clientY,time:Date.now(),
+               box,edge:position(box)};
+           },{passive:true,capture:true});
+           document.addEventListener('touchend',e=>{
+             const g=start;reset();
+             if(!g||activeView!=='dialogue'||!e.changedTouches.length||!dialogueAnswerChecked)return;
+             const dx=e.changedTouches[0].clientX-g.x,dy=e.changedTouches[0].clientY-g.y;
+             if(Math.abs(dy)<60||Math.abs(dy)<=Math.abs(dx)*1.2||Date.now()-g.time>=1200)return;
+             const next=dy<0,now=position(g.box);
+             // Never change lesson on the gesture that merely reaches a scroll edge.
+             if(!g.edge.overflow||(next?g.edge.bottom&&now.bottom:g.edge.top&&now.top)){
+               dialogueMove(next?1:-1);
+             }
+           },{passive:true,capture:true});
+           document.addEventListener('touchcancel',reset,{passive:true,capture:true});
+          """
           s=s[:a]+new+s[b:]
           assert s.count('dialogueAnswerChecked=true;')==2
           assert s.count('(function enableDialogueSwipe(){')==1
