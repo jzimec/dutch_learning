@@ -1,0 +1,21 @@
+name: Inspect Dialogue scroll container
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-dialogue-scroll.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          l=s.splitlines()
+          for i,v in enumerate(l):
+            if 'function dialogueMove(' in v or 'function showDialogue(' in v or 'function enableDialogueSwipe' in v or '#specialView' in v or '.special-view' in v or 'specialView{' in v:
+              a=max(0,i-3);b=min(len(l),i+17)
+              print('---',i+1)
+              for k in range(a,b):print(f'{k+1}: {l[k][:400]}')
+          PY
