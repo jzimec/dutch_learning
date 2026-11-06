@@ -45,7 +45,7 @@ function loadClient(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
       client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
-      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;syncButton();if(event==="PASSWORD_RECOVERY")queueMicrotask(()=>showPasswordRecovery());});
+      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");if(btn)btn.textContent=session?"账户":"登录";if(event==="PASSWORD_RECOVERY")setTimeout(()=>showPasswordRecovery(),0);});
       resolve(client);
     }catch(e){reject(e);}
    }
@@ -158,7 +158,7 @@ async function showPasswordRecovery(){
    message("密码已重置成功。现在可以使用新密码登录。");
    btn.textContent="完成";
    btn.disabled=false;btn.onclick=()=>{close();account();};
-  }catch(e){message("修改失败："+(e.message||"请重试"));btn.disabled=false;}
+  }catch(e){const msg=String(e?.message||"请重试");message(/abort|signal is aborted/i.test(msg)?"会话请求被中止。请重新打开密码重置邮件中的链接后重试。":"修改失败："+msg);btn.disabled=false;}
  };
 }
 async function account(){
