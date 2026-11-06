@@ -1,0 +1,86 @@
+name: Fix Dialogue scroll-before-page swipe
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-dialogue-scroll-swipe-once.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Dialogue-only touch handlers
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          start=s.index('(function enableDialogueSwipe(){')
+          end=s.index("  document.addEventListener('keydown',e=>{",start)
+          original=s[start:end]
+          assert original.count('dialogueMove(dy<0?1:-1)')==1
+          assert "document.addEventListener('touchstart'" in original
+          assert "document.addEventListener('touchend'" in original
+          new="""(function enableDialogueSwipe(){
+ let sx=null,sy=null,started=0,ignore=false,edgeAtStart=null;
+ const reset=()=>{sx=null;sy=null;started=0;ignore=false;edgeAtStart=null;};
+ const interactive=el=>!!(el&&el.closest&&el.closest('button,a,input,select,textarea,label,[role="button"],.mobile-bottom-nav,.nav-action'));
+ const scrollBox=()=>document.getElementById('specialView');
+ document.addEventListener('touchstart',e=>{
+   reset();if(activeView!=='dialogue'||e.touches.length!==1)return;
+   ignore=interactive(e.target);if(ignore)return;
+   sx=e.touches[0].clientX;sy=e.touches[0].clientY;started=Date.now();
+   const box=scrollBox();
+   if(!box)return;
+   // Use the scroll position at the BEGINNING of the gesture, never the end.
+   // Swiping to the bottom this time must not also change vocabulary.
+   const overflow=box.scrollHeight>box.clientHeight+4;
+   const tolerance=4;
+   edgeAtStart={box,overflow,top:box.scrollTop<=tolerance,
+     bottom:box.scrollTop+box.clientHeight>=box.scrollHeight-tolerance};
+ },{passive:true,capture:true});
+ document.addEventListener('touchend',e=>{
+   if(sy===null||ignore||activeView!=='dialogue'||!e.changedTouches.length){reset();return;}
+   const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+   const valid=Math.abs(dy)>=60&&Math.abs(dy)>Math.abs(dx)*1.2&&Date.now()-started<1200;
+   if(valid&&edgeAtStart&&edgeAtStart.box.isConnected){
+     const next=dy<0,box=edgeAtStart.box;
+     const stillAtEdge=next?box.scrollTop+box.clientHeight>=box.scrollHeight-4:box.scrollTop<=4;
+     // Non-overflowing Dialogue pages keep the original one-swipe navigation.
+     // Overflowing pages navigate only on a NEW swipe that starts at the edge.
+     if(!edgeAtStart.overflow||(stillAtEdge&&(next?edgeAtStart.bottom:edgeAtStart.top))){
+       dialogueMove(next?1:-1);
+     }
+   }
+   reset();
+ },{passive:true,capture:true});
+ document.addEventListener('touchcancel',reset,{passive:true,capture:true});
+"""
+          s=s[:start]+new+s[end:]
+          assert s.count('(function enableDialogueSwipe(){')==1
+          assert s.count('edgeAtStart={box,overflow,top:')==1
+          assert s.count('(function enableGrammarLessonSwipe(){')==1
+          assert s.count('(function enableQuizSwipeNext(){')==1
+          p.write_text(s,encoding='utf-8')
+          print('Only Dialogue swipe handler updated')
+          PY
+      - name: Validate JavaScript syntax and change scope
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          a=s.index('(function enableDialogueSwipe(){')
+          b=s.index('function dialogueCheckOffline(value,isVoice){',a) if 'function dialogueCheckOffline(value,isVoice){' in s[a:] else s.index('function dialogueStartMic(){',a)
+          Path('/tmp/dialogue-swipe.js').write_text(s[a:b],encoding='utf-8')
+          PY
+          node --check /tmp/dialogue-swipe.js
+          git diff --check
+          git diff --numstat -- index.html
+      - name: Commit updated Dialogue swipe only
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Scroll Dialogue content to edge before allowing next swipe to change lesson"
+          git push
