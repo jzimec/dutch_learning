@@ -1,0 +1,22 @@
+name: Inspect Dialogue practice audio alignment only
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-dialogue-practice-audio.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect CSS and Dialogue practice HTML
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          lines=s.splitlines()
+          for i,line in enumerate(lines):
+            if any(w in line for w in ['dialogue-speakers','dialogue-feedback','dialogue-practice-tools','dialogue-practice-card','dialogue-input-row','dialogueCheckOffline','dialogueRenderPractice','dialogue-feedback-normal','dialogueFeedbackNormal']):
+              print(f'--- {i+1}')
+              for j in range(max(0,i-1),min(len(lines),i+3)):
+                print(f'{j+1}: {lines[j][:950]}')
+          PY
