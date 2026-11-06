@@ -44,7 +44,7 @@ function loadClient(){
    function init(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
-      client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
+      client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:false,detectSessionInUrl:true}});
       client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");if(btn)btn.textContent=session?"账户":"登录";if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
       resolve(client);
     }catch(e){reject(e);}
