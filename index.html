@@ -1650,7 +1650,7 @@ function dialogueRenderPractice(){
  document.getElementById('dialogueCheckText').onclick=()=>dialogueCheck(document.getElementById('dialogueTextReply').value,false);
  document.getElementById('dialogueMic').onclick=dialogueStartMic;
 }
-function dialogueCheck(value,isVoice){
+function dialogueCheckOffline(value,isVoice){
  const l=dialogueCurrent(),result=document.getElementById('dialogueResult');if(!result||!l)return;
  const text=String(value||'').trim(),target=l.sentenceNl||l.nl;
  if(!text){result.innerHTML='<div class="dialogue-feedback warn">请先输入或说出一句荷兰语。</div>';return;}
@@ -1668,6 +1668,81 @@ function dialogueCheck(value,isVoice){
  document.getElementById('dialogueFeedbackNormal').onclick=()=>speakDutch(target);
  document.getElementById('dialogueFeedbackSlow').onclick=()=>speakDutch(target,true);
 }
+async function dialogueCheck(value,isVoice){
+  const l=dialogueCurrent(), result=document.getElementById('dialogueResult');
+  if(!l||!result)return;
+  const answer=String(value||'').trim();
+  if(!answer){dialogueCheckOffline(value,isVoice);return;}
+  const endpoint=String(window.DUTCH_DIALOGUE_AI_ENDPOINT||'').trim();
+  if(!/^https:\/\/[-a-z0-9]+\.supabase\.co\/functions\/v1\/dialogue-check\/?$/i.test(endpoint)){
+    dialogueCheckOffline(value,isVoice);
+    return;
+  }
+  let token='';
+  try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}
+  if(!token){
+    const entered=window.prompt('请输入 Dialogue AI 访问密码（Supabase 中设置的 DIALOGUE_AI_ACCESS_TOKEN）。仅在本次浏览器会话中保存。');
+    if(!entered){result.innerHTML='<div class="dialogue-feedback warn">AI 检查尚未授权，未提交句子。你可以再次点击“检查回答”。</div>';return;}
+    token=entered.trim();
+    try{sessionStorage.setItem('dutchDialogueAiToken',token);}catch(e){}
+  }
+  result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与句意…</div>';
+  const currentResult=result, currentLesson=l, controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),20000);
+  try{
+    const reply=await fetch(endpoint,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-dialogue-token':token},
+      body:JSON.stringify({
+        answer:answer.slice(0,500),
+        target_word:String(l.nl||''),
+        reference:String(l.sentenceNl||l.nl||''),
+        question:'Kun je een zin maken met het woord '+String(l.nl||'')+'?'
+      }),
+      signal:controller.signal,
+      cache:'no-store'
+    });
+    if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;
+    if(reply.status===401){
+      try{sessionStorage.removeItem('dutchDialogueAiToken');}catch(e){}
+      throw new Error('访问密码无效；已清除本次会话的密码，请重新点击检查。');
+    }
+    if(!reply.ok)throw new Error(reply.status===503?'Supabase AI 服务尚未配置。':'AI 服务暂时不可用（HTTP '+reply.status+'）。');
+    const data=await reply.json();
+    if(!data||!['correct','needs_revision','off_topic','uncertain'].includes(data.verdict))
+      throw new Error('AI 返回了无法识别的结果。');
+    const titleMap={
+      correct:'✓ 正确 · Goed gedaan!',
+      needs_revision:'需要修改',
+      off_topic:'语法可能正确，但不符合题意',
+      uncertain:'暂时无法确定'
+    };
+    const cls=data.verdict==='correct'?'good':'warn';
+    const corrected=String(data.corrected_dutch||'').trim();
+    const example=corrected||String(l.sentenceNl||l.nl||'');
+    const explanation=String(data.explanation_zh||'').trim();
+    const comments=String(data.feedback_zh||'').trim();
+    currentResult.innerHTML='<div class="dialogue-feedback '+cls+'"><b>'+dialogueEscape(titleMap[data.verdict])+'</b>'+
+      '<div>'+dialogueEscape(comments)+'</div>'+
+      (explanation?'<div>'+dialogueEscape(explanation)+'</div>':'')+
+      (isVoice?'<div>提示：这里只判断语音识别后的文字，不评价发音准确度。</div>':'')+
+      '<div style="margin-top:9px"><b>'+(corrected?'建议表达：':'参考表达：')+'</b><div>'+dialogueEscape(example)+'</div></div>'+
+      '<div class="dialogue-speakers"><button class="dialogue-action" id="dialogueFeedbackNormal">🔊</button><button class="dialogue-action" id="dialogueFeedbackSlow">🐢</button></div></div>';
+    const normal=document.getElementById('dialogueFeedbackNormal');
+    const slow=document.getElementById('dialogueFeedbackSlow');
+    if(normal)normal.onclick=()=>speakDutch(example);
+    if(slow)slow.onclick=()=>speakDutch(example,true);
+  }catch(err){
+    if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;
+    const message=err instanceof Error?err.message:'连接 AI 服务失败';
+    currentResult.innerHTML='<div class="dialogue-feedback warn"><b>AI 检查未完成</b><div>'+
+      dialogueEscape(message==='This operation was aborted'?'请求超时':message)+
+      '</div><button type="button" class="dialogue-action" id="dialogueOfflineFallback">使用原有离线检查</button></div>';
+    const fallback=document.getElementById('dialogueOfflineFallback');
+    if(fallback)fallback.onclick=()=>dialogueCheckOffline(value,isVoice);
+  }finally{clearTimeout(timeout);}
+}
+
 function dialogueStartMic(){
  const status=document.getElementById('dialogueMicStatus');const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SpeechRecognition){status.textContent='此浏览器不支持语音识别。可以在文字框手动输入后检查。';return;}
@@ -1863,5 +1938,6 @@ if ((location.protocol === "https:" || location.hostname === "localhost") && "se
   document.addEventListener('touchcancel',reset,{capture:true,passive:true});
 })();
 </script>
+<script src="./dialogue-ai-config.js?v=1"></script>
 </body>
 </html>
