@@ -1,0 +1,19 @@
+name: Inspect Dialogue practice and swipe state
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-dialogue-practice-state.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          l=Path('index.html').read_text(encoding='utf8').splitlines()
+          ranges=[(1350,1375),(1555,1770),(830,855),(1925,1935)]
+          for a,b in ranges:
+           print('===== RANGE',a,b)
+           for i in range(a-1,min(b,len(l))):print(str(i+1)+': '+l[i][:800])
+          PY
