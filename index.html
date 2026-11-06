@@ -999,31 +999,6 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
 }
 </style>
 <style>
-/* Progress five-column legibility: keep words intact; allow sideways scrolling on narrow screens. */
-.progress-scroll {width:100%;max-width:100%;overflow-x:auto!important;-webkit-overflow-scrolling:touch}
-.progress-scroll .progress-table {width:100%;min-width:540px!important;table-layout:auto!important;border-collapse:collapse}
-.progress-scroll .progress-table th,
-.progress-scroll .progress-table td {
-  font-size:clamp(14px,1.05vw,16px)!important;
-  line-height:1.4!important;
-  padding:10px 9px!important;
-  white-space:nowrap!important;
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-  vertical-align:middle!important;
-}
-.progress-scroll .progress-table th:first-child,
-.progress-scroll .progress-table td:first-child {width:54px!important;min-width:54px!important;max-width:none!important}
-.progress-scroll .progress-table th:nth-child(2),
-.progress-scroll .progress-table td:nth-child(2) {min-width:130px!important}
-.progress-scroll .progress-table th:nth-child(3),
-.progress-scroll .progress-table td:nth-child(3) {min-width:140px!important}
-.progress-scroll .progress-table th:nth-child(4),
-.progress-scroll .progress-table td:nth-child(4),
-.progress-scroll .progress-table th:nth-child(5),
-.progress-scroll .progress-table td:nth-child(5) {min-width:74px!important;text-align:center!important}
-</style>
-<style>
 /* 2026-11-06: user-requested fixes only: Quiz option size, Learn audio alignment, Progress columns. */
 #specialView .review-quiz-options {gap:9px!important;}
 #specialView .review-quiz-option {
@@ -1080,12 +1055,7 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
   #learningView .mobile-word-card .text-wrap,
   #learningView .mobile-sentence-card .sentence-mobile-content {padding-right:53px!important;}
 }
-.progress-scroll {overflow-x:auto!important;}
-.progress-scroll .progress-table {table-layout:auto!important;min-width:500px!important;}
-.progress-scroll .progress-table td,.progress-scroll .progress-table th {
-  font-size:14px!important;white-space:nowrap!important;
-  overflow-wrap:normal!important;word-break:normal!important;
-}
+
 
 /* Restore previously approved Learn header alignment ONLY (title, icon, divider). */
 @media (max-width:1000px), (pointer:coarse) {
