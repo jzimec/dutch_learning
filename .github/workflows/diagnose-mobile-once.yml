@@ -1,0 +1,28 @@
+name: Diagnose mobile Progress and module swipe
+on:
+  push:
+    paths:
+      - '.github/workflows/diagnose-mobile-once.yml'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect HTML without modifying files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          print('SIZE',len(s),'LINES',s.count('\n'))
+          for target in ['progress-scroll','progress-table','mobile-bottom-nav','mobile-nav-action','activeView','enableHorizontalModuleSwipe','showView(','setView(','switchView(','nav-action','touchstart','touchend']:
+            print('\n===',target,' occurrences',s.count(target),'===')
+            ms=list(re.finditer(re.escape(target),s,re.I))
+            for m in (ms[:2]+ms[-2:]):
+              print('AT',m.start(),repr(s[max(0,m.start()-190):m.start()+250])[:650])
+          for target in ['<th>Wrong</th></tr>','<th>Status</th>']:
+           print('TABLE TEST',target,s.count(target))
+          PY
