@@ -1,0 +1,26 @@
+name: Inspect Dialogue AI wiring requirements
+on:
+  push:
+    paths: ['.github/workflows/inspect-dialogue-wiring-once.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect exact frontend wiring
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          s=Path('index.html').read_text(encoding='utf-8')
+          for key in ['supabase','createClient','supabaseUrl','SUPABASE_URL','signInWithPassword','getSession','authToken','dialogueCheckText','dialoguePractice','dialogue-render','function renderDialoguePractice','function dialogueRenderPractice','function dialogueStartMic']:
+           print('\nKEY',key,'COUNT',s.lower().count(key.lower()))
+           for m in list(re.finditer(re.escape(key),s,re.I))[:5]:
+            print(' '.join(s[max(0,m.start()-160):m.start()+320].split())[:550])
+          for name in ['function showDialogue(', 'function renderDialoguePractice','function dialogueCheck(value,isVoice)']:
+           m=s.find(name)
+           if m>=0:
+            print('\nFUNC',name,'\n',s[m:m+7000])
+          PY
