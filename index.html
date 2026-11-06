@@ -1621,22 +1621,40 @@ function dialogueMove(delta){
  const panel=document.getElementById('specialView');if(panel)panel.scrollTop=0;
 }
 (function enableDialogueSwipe(){
- let sx=null,sy=null,started=0,ignore=false;
- const reset=()=>{sx=null;sy=null;started=0;ignore=false;};
+ let sx=null,sy=null,started=0,ignore=false,edgeAtStart=null;
+ const reset=()=>{sx=null;sy=null;started=0;ignore=false;edgeAtStart=null;};
  const interactive=el=>!!(el&&el.closest&&el.closest('button,a,input,select,textarea,label,[role="button"],.mobile-bottom-nav,.nav-action'));
+ const scrollBox=()=>document.getElementById('specialView');
  document.addEventListener('touchstart',e=>{
-  reset();if(activeView!=='dialogue'||e.touches.length!==1)return;
-  ignore=interactive(e.target);if(ignore)return;
-  sx=e.touches[0].clientX;sy=e.touches[0].clientY;started=Date.now();
+   reset();if(activeView!=='dialogue'||e.touches.length!==1)return;
+   ignore=interactive(e.target);if(ignore)return;
+   sx=e.touches[0].clientX;sy=e.touches[0].clientY;started=Date.now();
+   const box=scrollBox();
+   if(!box)return;
+   // Use the scroll position at the BEGINNING of the gesture, never the end.
+   // Swiping to the bottom this time must not also change vocabulary.
+   const overflow=box.scrollHeight>box.clientHeight+4;
+   const tolerance=4;
+   edgeAtStart={box,overflow,top:box.scrollTop<=tolerance,
+     bottom:box.scrollTop+box.clientHeight>=box.scrollHeight-tolerance};
  },{passive:true,capture:true});
  document.addEventListener('touchend',e=>{
-  if(sy===null||ignore||activeView!=='dialogue'||!e.changedTouches.length){reset();return;}
-  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
-  if(Math.abs(dy)>=60&&Math.abs(dy)>Math.abs(dx)*1.2&&Date.now()-started<1200){dialogueMove(dy<0?1:-1);}
-  reset();
+   if(sy===null||ignore||activeView!=='dialogue'||!e.changedTouches.length){reset();return;}
+   const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+   const valid=Math.abs(dy)>=60&&Math.abs(dy)>Math.abs(dx)*1.2&&Date.now()-started<1200;
+   if(valid&&edgeAtStart&&edgeAtStart.box.isConnected){
+     const next=dy<0,box=edgeAtStart.box;
+     const stillAtEdge=next?box.scrollTop+box.clientHeight>=box.scrollHeight-4:box.scrollTop<=4;
+     // Non-overflowing Dialogue pages keep the original one-swipe navigation.
+     // Overflowing pages navigate only on a NEW swipe that starts at the edge.
+     if(!edgeAtStart.overflow||(stillAtEdge&&(next?edgeAtStart.bottom:edgeAtStart.top))){
+       dialogueMove(next?1:-1);
+     }
+   }
+   reset();
  },{passive:true,capture:true});
  document.addEventListener('touchcancel',reset,{passive:true,capture:true});
- document.addEventListener('keydown',e=>{
+document.addEventListener('keydown',e=>{
   if(activeView!=='dialogue'||interactive(e.target))return;
   if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();dialogueMove(1);}
   else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();dialogueMove(-1);}
