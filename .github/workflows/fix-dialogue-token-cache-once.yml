@@ -1,0 +1,51 @@
+name: Fix repeated Dialogue AI access prompt
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-dialogue-token-cache-once.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix only Dialogue token cache
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old_get="  let token='';\n  try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}\n  if(!token){"
+          new_get="  let token=window.__dutchDialogueAiToken||'';\n  if(!token){try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}}\n  if(!token){"
+          old_save="    token=entered.trim();\n    try{sessionStorage.setItem('dutchDialogueAiToken',token);}catch(e){}"
+          new_save="    token=entered.trim();\n    window.__dutchDialogueAiToken=token;\n    try{sessionStorage.setItem('dutchDialogueAiToken',token);}catch(e){}"
+          old_reset="      try{sessionStorage.removeItem('dutchDialogueAiToken');}catch(e){}"
+          new_reset="      window.__dutchDialogueAiToken='';\n      try{sessionStorage.removeItem('dutchDialogueAiToken');}catch(e){}"
+          for old,new in [(old_get,new_get),(old_save,new_save),(old_reset,new_reset)]:
+              assert s.count(old)==1, ('unexpected match count',old[:55],s.count(old))
+              s=s.replace(old,new,1)
+          assert s.count('function dialogueCheckOffline(value,isVoice){')==1
+          assert s.count('async function dialogueCheck(value,isVoice){')==1
+          assert s.count('dialogue-ai-config.js')==1
+          p.write_text(s,encoding='utf-8')
+          print('Only Dialogue AI token caching updated')
+          PY
+      - name: Check JS syntax
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          a=s.index('async function dialogueCheck(value,isVoice){')
+          b=s.index('function dialogueStartMic(){',a)
+          Path('/tmp/dialogue-token-check.js').write_text(s[a:b],encoding='utf-8')
+          PY
+          node --check /tmp/dialogue-token-check.js
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Preserve Dialogue AI token in active page when sessionStorage unavailable"
+          git push
