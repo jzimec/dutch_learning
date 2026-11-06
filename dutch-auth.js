@@ -4,7 +4,7 @@
 const URL="https://uxzyswpxwqcjvgkjlwhv.supabase.co";
 const KEY="sb_publishable_XYuHAixMGkRaFj6-bt3mXg_GGov9jUl";
 const KINDS=[["learn","Learn"],["quiz","Quiz"],["dialogue","Dialogue"],["grammar","Grammar"],["progress","Progress"],["categories","Categories"],["ai","AI Dialogue"]];
-let client=null,loading=null,dialog=null,profile=null;
+let client=null,loading=null,dialog=null,profile=null,recoverySeen=false;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function style(){
  if(document.getElementById("dutch-auth-style"))return;
@@ -45,7 +45,7 @@ function loadClient(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
       client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}});
-      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");if(btn)btn.textContent=session?"账户":"登录";if(event==="PASSWORD_RECOVERY")setTimeout(()=>showPasswordRecovery(),0);});
+      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");if(btn)btn.textContent=session?"账户":"登录";if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
       resolve(client);
     }catch(e){reject(e);}
    }
@@ -127,7 +127,7 @@ async function ensure(requireAi=true,skipSessionCheck=false){
  });
 }
 
-const RECOVERY_URL="https://jzimec.github.io/dutch_learning/";
+const RECOVERY_URL="https://jzimec.github.io/dutch_learning/?auth=recovery";
 async function forgotPassword(existingEmail=""){
  const body=createPanel("Dutch Learning · 重置密码");
  body.innerHTML='<p class="da-note">输入注册邮箱，我们会发送密码重置邮件。请在邮件中点击链接返回 App。</p>'+
@@ -172,7 +172,7 @@ async function showPasswordRecovery(){
    const {error}=await c.auth.updateUser({password:pw});
    if(error)throw error;
    // Remove recovery credentials from the browser address after the reset.
-   if(window.location.hash.includes("access_token=")||window.location.hash.includes("type=recovery")){
+   if(window.location.hash.includes("access_token=")||window.location.hash.includes("type=recovery")||new URLSearchParams(location.search).get("auth")==="recovery"){
      history.replaceState(null,"",window.location.pathname+window.location.search);
    }
    message("密码已重置成功。现在可以使用新密码登录。");
@@ -252,9 +252,9 @@ function boot(){
  const hash=window.location.hash||"";
  // The recovery link returns with type=recovery in its hash. The Supabase
  // client MUST be initialized on this path so it can process the token.
- const recovering=/(?:^|[&#])type=recovery(?:&|$)/.test(hash);
+ const recovering=new URLSearchParams(window.location.search).get("auth")==="recovery" || /(?:^|[&#])type=recovery(?:&|$)/.test(hash);
  loadClient().then(c=>c.auth.getSession()).then(({data:{session},error})=>{
-   if(recovering){
+   if(recovering||recoverySeen){
      if(!error&&session?.user)showPasswordRecovery();
      else{
        const body=createPanel("Dutch Learning · 重置链接无效");
@@ -268,7 +268,7 @@ function boot(){
      if(!dialog)ensure(false,true).catch(()=>{});
    }else btn.textContent="账户";
  }).catch(()=>{
-   if(recovering){
+   if(recovering||recoverySeen){
      const body=createPanel("Dutch Learning · 重置链接无法验证");
      body.innerHTML='<p class="da-note">无法验证密码重置链接，请检查网络或重新申请重置邮件。</p><button id="da-recover-again">重新发送重置邮件</button>';
      body.querySelector("#da-recover-again").onclick=()=>forgotPassword();
