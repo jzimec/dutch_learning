@@ -1,0 +1,39 @@
+name: Restore approved Learn header alignment once
+on:
+  push:
+    paths:
+      - '.github/workflows/restore-learn-header-once.yml'
+permissions:
+  contents: write
+jobs:
+  restore-header:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore only Learn header geometry
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          assert 'class="learn-unified-heading"' in s
+          assert 'class="topbar"' in s
+          mark='/* Restore previously approved Learn header alignment ONLY (title, icon, divider). */'
+          assert mark not in s
+          css="/* Restore previously approved Learn header alignment ONLY (title, icon, divider). */\n@media (max-width:1000px), (pointer:coarse) {\n  body.learn-swipe-enabled .topbar {\n    height:45px!important;\n    min-height:45px!important;\n    padding:0 0 10px!important;\n    margin:0 0 12px!important;\n    border-bottom:1px solid #e1e6ec!important;\n    align-items:center!important;\n    box-sizing:border-box!important;\n  }\n  body.learn-swipe-enabled #learningView.lesson-stack {\n    height:calc(100% - 57px)!important;\n    max-height:calc(100% - 57px)!important;\n  }\n}\n"
+          s,n=re.subn(r'(</style>\s*</head>)',lambda m:'\n'+css+m.group(1),s,count=1)
+          assert n==1
+          p.write_text(s,encoding='utf-8')
+          print('Learn header alignment restored, no other markup or style changed.')
+          PY
+      - name: Commit only the header CSS addition
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Restore approved Learn title icon and divider alignment"
+          git push
