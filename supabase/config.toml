@@ -1,0 +1,2 @@
+[functions.dialogue-check]
+verify_jwt = false
