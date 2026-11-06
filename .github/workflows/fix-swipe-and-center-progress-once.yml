@@ -1,0 +1,57 @@
+name: Fix module swipe and center Progress cells once
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-swipe-and-center-progress-once.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update swipe listener and Progress text alignment only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          start=s.index('<script>\n/* Module swipe navigation only; existing click navigation and vertical gestures remain unchanged. */')
+          end=s.index('</script>',start)+len('</script>')
+          assert s.count('function enableHorizontalModuleSwipe')==1
+          assert end-start<5000
+          replacement="<script>\n/* Module swipe navigation only; existing click navigation and vertical gestures remain unchanged. */\n(function enableHorizontalModuleSwipe(){\n  let gesture=null;\n  const tabSelector='.mobile-bottom-nav .mobile-nav-action[data-view]';\n  function reset(){gesture=null;}\n  document.addEventListener('touchstart',function(e){\n    reset();\n    if(e.touches.length!==1)return;\n    if(!window.matchMedia('(max-width:1000px), (pointer:coarse)').matches)return;\n    const el=e.target;\n    if(el.closest('input,textarea,select,[contenteditable=\"true\"],.mobile-bottom-nav,.nav-action'))return;\n    // Don't override gestures within independently horizontal-scrolling controls.\n    if(el.closest('.story-strip,.story-scroller,.story-slider,.dialogue-story-strip,.carousel,[data-horizontal-scroll]'))return;\n    const t=e.touches[0];\n    gesture={x:t.clientX,y:t.clientY,view:activeView,t:Date.now()};\n  },{capture:true,passive:true});\n  document.addEventListener('touchend',function(e){\n    if(!gesture||e.changedTouches.length!==1)return;\n    const g=gesture;reset();\n    if(g.view!==activeView)return;\n    const t=e.changedTouches[0],dx=t.clientX-g.x,dy=t.clientY-g.y;\n    if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.4||Date.now()-g.t>1600)return;\n    const tabs=Array.from(document.querySelectorAll(tabSelector));\n    const key=g.view==='learn'?'home':g.view;\n    const index=tabs.findIndex(el=>el.dataset.view===key);\n    if(index<0)return;\n    const destination=tabs[index+(dx<0?1:-1)];\n    if(destination)destination.click();\n  },{capture:true,passive:true});\n  document.addEventListener('touchcancel',reset,{capture:true,passive:true});\n})();\n</script>"
+          s=s[:start]+replacement+s[end:]
+          # Only center text inside the existing Progress table; no changes to widths or fonts.
+          rule='\n/* Progress cell alignment only */\n#specialView .progress-table th,#specialView .progress-table td {text-align:center!important;}\n'
+          assert '/* Progress cell alignment only */' not in s
+          assert s.count('</head>')==1
+          s=s.replace('</head>','<style>'+rule+'</style>\n</head>',1)
+          assert s.count('function enableHorizontalModuleSwipe')==1
+          assert s.count('class="mobile-nav-action nav-action')==6
+          assert s.count('<th>Status</th>')==0
+          p.write_text(s,encoding='utf-8')
+          print("Updated only horizontal swipe listener and Progress cell text alignment.")
+          PY
+      - name: Verify swipe code parses
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          start=s.index('<script>\n/* Module swipe navigation only; existing click navigation and vertical gestures remain unchanged. */')+len('<script>')
+          end=s.index('</script>',start)
+          Path('/tmp/module-swipe.js').write_text(s[start:end],encoding='utf-8')
+          PY
+          node --check /tmp/module-swipe.js
+      - name: Commit index.html only
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Fix mobile module swipe and center Progress text"
+          git push
