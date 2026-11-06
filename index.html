@@ -1668,6 +1668,36 @@ function dialogueCheckOffline(value,isVoice){
  document.getElementById('dialogueFeedbackNormal').onclick=()=>speakDutch(target);
  document.getElementById('dialogueFeedbackSlow').onclick=()=>speakDutch(target,true);
 }
+function dialogueAskAccessPassword(){
+  return new Promise(resolve=>{
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:18px';
+    const form=document.createElement('form');
+    form.style.cssText='background:#fff;color:#222;border-radius:14px;padding:22px;max-width:370px;width:100%;box-sizing:border-box;display:grid;gap:12px;font:16px system-ui,sans-serif';
+    const title=document.createElement('strong');
+    title.textContent='Dialogue AI 授权';
+    const hint=document.createElement('div');
+    hint.textContent='输入一次访问密码。可使用手机密码管理器自动填入；App 不会自行保存到浏览器存储。';
+    hint.style.cssText='font-size:14px;line-height:1.5';
+    const user=document.createElement('input');
+    user.type='text';user.name='username';user.autocomplete='username';user.value='dutch-dialogue-ai';user.style.display='none';
+    const input=document.createElement('input');
+    input.type='password';input.name='password';input.autocomplete='current-password';input.required=true;
+    input.placeholder='访问密码';input.style.cssText='box-sizing:border-box;width:100%;font-size:16px;padding:10px;border:1px solid #aaa;border-radius:8px';
+    const actions=document.createElement('div');
+    actions.style.cssText='display:flex;justify-content:flex-end;gap:10px';
+    const cancel=document.createElement('button');cancel.type='button';cancel.textContent='取消';
+    const confirm=document.createElement('button');confirm.type='submit';confirm.textContent='确认';
+    for(const btn of [cancel,confirm])btn.style.cssText='padding:9px 15px;border-radius:8px;border:1px solid #aaa';
+    function done(value){overlay.remove();resolve(value);}
+    cancel.onclick=()=>done('');
+    overlay.addEventListener('click',e=>{if(e.target===overlay)done('');});
+    form.addEventListener('submit',e=>{e.preventDefault();done(input.value);});
+    actions.append(cancel,confirm);
+    form.append(title,hint,user,input,actions);overlay.append(form);document.body.append(overlay);input.focus();
+  });
+}
+
 async function dialogueCheck(value,isVoice){
   const l=dialogueCurrent(), result=document.getElementById('dialogueResult');
   if(!l||!result)return;
@@ -1679,13 +1709,11 @@ async function dialogueCheck(value,isVoice){
     return;
   }
   let token=window.__dutchDialogueAiToken||'';
-  if(!token){try{token=sessionStorage.getItem('dutchDialogueAiToken')||'';}catch(e){}}
   if(!token){
-    const entered=window.prompt('请输入 Dialogue AI 访问密码（Supabase 中设置的 DIALOGUE_AI_ACCESS_TOKEN）。仅在本次浏览器会话中保存。');
-    if(!entered){result.innerHTML='<div class="dialogue-feedback warn">AI 检查尚未授权，未提交句子。你可以再次点击“检查回答”。</div>';return;}
+    const entered=await dialogueAskAccessPassword();
+    if(!entered){result.innerHTML='<div class="dialogue-feedback warn">AI 检查尚未授权，未提交句子。</div>';return;}
     token=entered.trim();
     window.__dutchDialogueAiToken=token;
-    try{sessionStorage.setItem('dutchDialogueAiToken',token);}catch(e){}
   }
   result.innerHTML='<div class="dialogue-feedback warn">AI 正在检查语法与句意…</div>';
   const currentResult=result, currentLesson=l, controller=new AbortController();
@@ -1706,7 +1734,6 @@ async function dialogueCheck(value,isVoice){
     if(!currentResult.isConnected||dialogueCurrent()!==currentLesson)return;
     if(reply.status===401){
       window.__dutchDialogueAiToken='';
-      try{sessionStorage.removeItem('dutchDialogueAiToken');}catch(e){}
       throw new Error('访问密码无效；已清除本次会话的密码，请重新点击检查。');
     }
     if(!reply.ok)throw new Error(reply.status===503?'Supabase AI 服务尚未配置。':'AI 服务暂时不可用（HTTP '+reply.status+'）。');
