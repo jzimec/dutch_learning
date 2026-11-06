@@ -17,12 +17,17 @@ jobs:
           from pathlib import Path
           import re
           s=Path('index.html').read_text(encoding='utf-8')
-          print('SIZE',len(s),'LINES',s.count('\n'))
-          for target in ['progress-scroll','progress-table','mobile-bottom-nav','mobile-nav-action','activeView','enableHorizontalModuleSwipe','showView(','setView(','switchView(','nav-action','touchstart','touchend']:
-            print('\n===',target,' occurrences',s.count(target),'===')
-            ms=list(re.finditer(re.escape(target),s,re.I))
-            for m in (ms[:2]+ms[-2:]):
-              print('AT',m.start(),repr(s[max(0,m.start()-190):m.start()+250])[:650])
-          for target in ['<th>Wrong</th></tr>','<th>Status</th>']:
-           print('TABLE TEST',target,s.count(target))
+          for word in ['/* v4.6.7: compact progress table for phone screens */', 'function markActiveNav', 'function showSpecial(', 'function showLearningView()', 'class="mobile-nav-action nav-action"', 'function enableHorizontalModuleSwipe', 'progress-scroll .progress-table']:
+           print("\nTARGET",word)
+           pos=s.find(word)
+           print(s[max(0,pos-100):pos+1600] if pos!=-1 else "not found")
+          print('\nCSS Progress occurrences')
+          for m in list(re.finditer(r'[^{}]{0,220}(?:progress-table|progress-scroll)[^{}]{0,220}\{[^{}]{0,500}\}',s[:100000],re.I)):
+           print(s[m.start():m.end()].replace('\n',' ')[:600])
+          print('\nNAV BUTTONS')
+          for m in re.finditer(r'<button class="mobile-nav-action nav-action"[^>]+>',s):
+           print(m.group()[:170])
+          print('\nACTIVE VIEW HANDLERS')
+          for m in list(re.finditer(r'activeView\s*=\s*',s))[-18:]:
+           print(s[m.start()-120:m.start()+180].replace('\n',' '))
           PY
