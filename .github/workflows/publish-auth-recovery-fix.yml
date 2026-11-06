@@ -1,0 +1,32 @@
+name: Publish Supabase recovery callback fix
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-auth-recovery-fix.yml'
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate and update cache reference
+        run: |
+          node --check dutch-auth.js
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("index.html")
+          s=p.read_text(encoding="utf-8")
+          old='<script src="./dutch-auth.js?v=2"></script>'
+          assert s.count(old)==1, "Unexpected auth script version"
+          s=s.replace(old,'<script src="./dutch-auth.js?v=3"></script>',1)
+          p.write_text(s,encoding="utf-8")
+          PY
+      - name: Commit only cache update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Refresh password recovery script cache"
+          git push
