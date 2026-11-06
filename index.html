@@ -1086,6 +1086,23 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
   font-size:14px!important;white-space:nowrap!important;
   overflow-wrap:normal!important;word-break:normal!important;
 }
+
+/* Restore previously approved Learn header alignment ONLY (title, icon, divider). */
+@media (max-width:1000px), (pointer:coarse) {
+  body.learn-swipe-enabled .topbar {
+    height:45px!important;
+    min-height:45px!important;
+    padding:0 0 10px!important;
+    margin:0 0 12px!important;
+    border-bottom:1px solid #e1e6ec!important;
+    align-items:center!important;
+    box-sizing:border-box!important;
+  }
+  body.learn-swipe-enabled #learningView.lesson-stack {
+    height:calc(100% - 57px)!important;
+    max-height:calc(100% - 57px)!important;
+  }
+}
 </style>
 </head>
 <body>
