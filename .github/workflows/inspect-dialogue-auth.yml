@@ -1,0 +1,21 @@
+name: Inspect Dialogue auth integration points
+on:
+  push:
+    paths:
+      - '.github/workflows/inspect-dialogue-auth.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path("index.html").read_text(encoding="utf-8")
+          a=s.index("async function dialogueCheck(value,isVoice){")
+          b=s.index("  const currentResult=result",a)
+          print("START SNIPPET:")
+          print(s[a:b][:2600])
+          print("END SNIPPET")
+          print("EXTRA SCRIPT:",s[-450:])
+          PY
