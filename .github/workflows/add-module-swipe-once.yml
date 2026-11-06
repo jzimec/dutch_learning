@@ -1,0 +1,37 @@
+name: Add horizontal module swipe once
+on:
+  push:
+    paths:
+      - '.github/workflows/add-module-swipe-once.yml'
+permissions:
+  contents: write
+jobs:
+  add-module-swipe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Insert isolated swipe listener (no CSS or layout changes)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          assert s.count('class="mobile-nav-action nav-action')==6,'Unexpected module count'
+          assert s.count('document.querySelectorAll(\'.nav-action\')')>0,'Missing existing nav handler'
+          assert s.count('</body>')==1
+          assert 'enableHorizontalModuleSwipe' not in s
+          block="<script>\n/* Module swipe navigation only; existing click navigation and vertical gestures remain unchanged. */\n(function enableHorizontalModuleSwipe(){\n  const navSelector='.mobile-bottom-nav .mobile-nav-action[data-view]';\n  let start=null;\n  const blocked='button,a,input,textarea,select,label,[role=\"button\"],[contenteditable=\"true\"],.mobile-bottom-nav,.mobile-story-card,.story-strip,.story-scroller,.story-slider,.dialogue-story-strip';\n  document.addEventListener('touchstart',function(e){\n    start=null;\n    if(e.touches.length!==1 || !window.matchMedia('(max-width:1000px), (pointer:coarse)').matches)return;\n    if(e.target.closest(blocked))return;\n    // Keep other horizontally scrolling widgets independently swipeable.\n    for(let el=e.target;el && el!==document.body;el=el.parentElement){\n      if(el.scrollWidth>el.clientWidth+12 && ['auto','scroll'].includes(getComputedStyle(el).overflowX))return;\n    }\n    const t=e.touches[0];\n    start={x:t.clientX,y:t.clientY,time:Date.now(),view:typeof activeView==='string'?activeView:null};\n  },{passive:true});\n  document.addEventListener('touchend',function(e){\n    if(!start || e.changedTouches.length!==1)return;\n    const t=e.changedTouches[0], dx=t.clientX-start.x,dy=t.clientY-start.y;\n    const valid=Math.abs(dx)>75 && Math.abs(dx)>Math.abs(dy)*1.6 && Date.now()-start.time<1100;\n    const startingView=start.view;start=null;\n    if(!valid || typeof activeView!=='string' || activeView!==startingView)return;\n    const tabs=Array.from(document.querySelectorAll(navSelector));\n    const current=startingView==='learn'?'home':startingView;\n    const i=tabs.findIndex(tab=>tab.dataset.view===current);\n    if(i<0)return;\n    const next=tabs[i+(dx<0?1:-1)];\n    if(next)next.click();\n  },{passive:true});\n  document.addEventListener('touchcancel',()=>{start=null;},{passive:true});\n})();\n</script>"
+          s=s.replace('</body>',block+'\n</body>',1)
+          p.write_text(s,encoding='utf-8')
+          print('Added module horizontal swipe only. Existing UI and click handlers unchanged.')
+          PY
+      - name: Commit only index.html
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --check
+          git commit -m "Add horizontal swipe navigation between six modules"
+          git push
