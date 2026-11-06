@@ -1,0 +1,34 @@
+name: Publish non-persistent Dutch session
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-session-memory-only.yml'
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify one session setting and update script cache
+        run: |
+          node --check dutch-auth.js
+          python3 - <<'PY'
+          from pathlib import Path
+          js=Path('dutch-auth.js').read_text(encoding='utf8')
+          assert js.count('persistSession:false')==1
+          assert 'persistSession:true' not in js
+          p=Path('index.html');s=p.read_text(encoding='utf8')
+          old='<script src="./dutch-auth.js?v=8"></script>'
+          assert s.count(old)==1,'Unexpected account script version; avoid any other changes'
+          p.write_text(s.replace(old,'<script src="./dutch-auth.js?v=9"></script>',1),encoding='utf8')
+          print('Only auth JS cache URL updated in index.html')
+          PY
+          git diff --check
+      - name: Commit only cache reference
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Load non-persistent login session setting"
+          git push
