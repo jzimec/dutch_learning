@@ -1106,6 +1106,29 @@ body.learn-swipe-enabled .main-area{overscroll-behavior-y:contain;}
 /* Progress cell alignment only */
 #specialView .progress-table th,#specialView .progress-table td {text-align:center!important;}
 </style>
+
+<style>
+/* Grammar detail: compact spacing and right-aligned example audio. */
+#specialView .grammar-lesson{max-width:780px;line-height:1.5;padding-bottom:12px}
+#specialView .grammar-lesson h2{font-size:21px;line-height:1.25;margin:0 0 3px;overflow-wrap:anywhere}
+#specialView .grammar-lesson-translation{font-size:14px;color:#64748b;margin:0 0 8px}
+#specialView .grammar-lesson h3{font-size:16px;line-height:1.3;margin:10px 0 5px}
+#specialView .grammar-rule{font-size:15px;line-height:1.55;padding:10px 12px;margin:5px 0 8px;border-radius:10px}
+#specialView .grammar-example{display:block;padding:8px 10px;margin:6px 0;border-radius:0 8px 8px 0}
+#specialView .grammar-example-row{display:flex;align-items:flex-start;gap:8px;width:100%}
+#specialView .grammar-example-row>b{flex:1;min-width:0;font-size:15px;line-height:1.45}
+#specialView .grammar-example-audio{display:flex;justify-content:flex-end;gap:4px;flex:0 0 auto;margin-left:auto}
+#specialView .grammar-example-audio button{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;min-width:34px;border:1px solid #cbdcef;border-radius:8px;background:#fff;font-size:19px;cursor:pointer;padding:0}
+#specialView .grammar-example small{font-size:13px;line-height:1.4;margin:2px 0}
+#specialView .grammar-example-note{font-size:14px;line-height:1.5;color:#435264;margin:5px 0 0}
+#specialView .grammar-question{font-size:15px;line-height:1.4;margin:5px 0}
+#specialView .grammar-choice{font-size:15px;line-height:1.35;padding:9px 12px;margin:6px 0;border-radius:9px}
+#specialView .grammar-feedback{padding:9px 11px;margin:8px 0;font-size:14px}
+#specialView .grammar-feedback p{margin:4px 0 0}
+#specialView .grammar-completed{font-size:14px;margin:6px 0}
+#specialView .unified-module-header:has(+ .grammar-lesson){flex-wrap:nowrap;margin-bottom:10px;padding-bottom:9px}
+#specialView .unified-module-header:has(+ .grammar-lesson) .unified-module-context{margin-left:auto;flex-shrink:0;text-align:right;white-space:nowrap}
+</style>
 </head>
 <body>
 <div class="app-shell">
@@ -1323,7 +1346,7 @@ function applyUnifiedModuleHeader(view){
  }else if(view==='quiz'||view==='progress'||view==='categories'||view==='review'||view==='new'){
   context.textContent='All categories';
  }else if(view==='grammar'){
-  context.textContent='Grammatica';
+  context.textContent=grammarLessonOpen ? `${GRAMMAR_LESSONS[grammarIndex].level} · ${grammarIndex+1}/${GRAMMAR_LESSONS.length}` : '';
  }
  head.append(context);root.prepend(head);
 }
@@ -1532,44 +1555,915 @@ function showCategories(){const html=Object.entries(categoryMeta).map(([id,m])=>
 function bindLessonCards(){document.querySelectorAll('.list-card').forEach(b=>b.onclick=()=>openLesson(b.dataset.cat,Number(b.dataset.index)));}
 
 const GRAMMAR_LESSONS=[
-{title:'Persoonlijke voornaamwoorden',zh:'人称代词',level:'A1',rule:'ik = 我；jij/je = 你；hij = 他；zij/ze = 她；wij/we = 我们；jullie = 你们；zij/ze = 他们。\n在荷兰语中，主语决定动词的形式。',examples:[['Ik woon in België.','我住在比利时。'],['Wij leren Nederlands.','我们学习荷兰语。']],q:'___ woon in België.（我住在比利时）',choices:['Ik','Hij','Wij'],correct:0,why:'“我”作主语时用 ik。'},
-{title:'Zijn — to be',zh:'动词 zijn（是）',level:'A1',rule:'ik ben；jij bent；hij/zij is；wij/jullie/zij zijn。\n记住：ik ben, jij bent, hij is。',examples:[['Ik ben moe.','我累了。'],['Zij is thuis.','她在家。']],q:'Hij ___ acht jaar.',choices:['ben','is','zijn'],correct:1,why:'hij（他）对应 is。'},
-{title:'Hebben — to have',zh:'动词 hebben（有）',level:'A1',rule:'ik heb；jij hebt；hij/zij heeft；wij/jullie/zij hebben。',examples:[['Ik heb een fiets.','我有一辆自行车。'],['Zij heeft een boek.','她有一本书。']],q:'Zij ___ een kat.',choices:['heb','heeft','hebben'],correct:1,why:'zij 表示“她”时，hebben 变为 heeft。'},
-{title:'De of het?',zh:'定冠词 de / het',level:'A1',rule:'荷兰语名词通常用 de 或 het。复数名词总是用 de。\n学习新名词时，把冠词一起记住：de tafel、het huis。',examples:[['De fiets is rood.','这辆自行车是红色的。'],['Het huis is groot.','这栋房子很大。']],q:'___ huis is groot.',choices:['De','Het','Een'],correct:1,why:'huis 是 het-woord，因此说 het huis。'},
-{title:'Een — a / an',zh:'不定冠词 een',level:'A1',rule:'een 相当于英语的 a/an，表示一个不特定的单数事物。\n注意：een 不用于复数名词。',examples:[['Ik heb een appel.','我有一个苹果。'],['Dat is een boek.','那是一本书。']],q:'Ik eet ___ appel.',choices:['een','het','de'],correct:0,why:'这里表示“一个苹果”，使用 een。'},
-{title:'Tegenwoordige tijd',zh:'一般现在时动词变位',level:'A1',rule:'规则动词通常：ik 用词干；jij/hij/zij 用词干+t；wij/jullie/zij 用不定式。\n例如 werken：ik werk，jij werkt，wij werken。',examples:[['Ik werk vandaag.','我今天工作。'],['Hij werkt op school.','他在学校工作。']],q:'Hij ___ vandaag. (werken)',choices:['werk','werkt','werken'],correct:1,why:'hij + 规则动词通常加 -t。'},
-{title:'Woordvolgorde',zh:'主句语序：动词第二位',level:'A1',rule:'陈述句的限定动词通常放在第二位置（V2），不一定是第二个单词。\n例如：Vandaag | ga | ik naar school。',examples:[['Ik ga vandaag naar school.','我今天去学校。'],['Vandaag ga ik naar school.','今天我去学校。']],q:'Vandaag ___ ik naar school.',choices:['ik ga','ga','gaan'],correct:1,why:'Vandaag 放在句首时，动词 ga 必须紧跟其后。'},
-{title:'Vragen stellen',zh:'一般疑问句',level:'A1',rule:'是非疑问句通常以限定动词开头：Werk jij? Ben je thuis?\n疑问词问句：Waar woon je? Hoe heet je?',examples:[['Ben je thuis?','你在家吗？'],['Waar woon jij?','你住在哪里？']],q:'___ je Nederlands?（你会说荷兰语吗？）',choices:['Spreek','Jij spreekt','Spreken'],correct:0,why:'一般疑问句动词在前；jij/je 在动词后时通常不用 -t：Spreek je?'},
-{title:'Niet of geen?',zh:'否定词 niet / geen',level:'A1–A2',rule:'geen 通常否定不定名词：Ik heb geen fiets。\nniet 通常否定动词、形容词或特定成分：Ik kom niet。',examples:[['Ik heb geen auto.','我没有汽车。'],['Ik slaap niet.','我不睡觉。']],q:'Ik heb ___ hond.',choices:['niet','geen','nee'],correct:1,why:'hond 是这里被否定的不定名词，用 geen。'},
-{title:'Meervoud',zh:'名词复数',level:'A1–A2',rule:'许多名词复数加 -en：boek → boeken；也有加 -s：tafel → tafels。\n部分名词不规则：kind → kinderen。',examples:[['Twee boeken liggen op tafel.','两本书放在桌上。'],['De kinderen spelen.','孩子们在玩。']],q:'Twee ___ (boek)',choices:['boeks','boeken','boek'],correct:1,why:'boek 的复数是 boeken。'},
-{title:'Verleden tijd: perfectum',zh:'完成过去时',level:'A2',rule:'完成过去时常用 hebben/zijn + 过去分词。\n例如：Ik heb gewerkt。Ik ben naar huis gegaan。',examples:[['Ik heb gegeten.','我已经吃过了。'],['Wij zijn naar huis gegaan.','我们已经回家了。']],q:'Ik ___ gisteren gewerkt.',choices:['ben','heb','heeft'],correct:1,why:'werken 的完成时通常用 hebben；ik 对应 heb。'},
-{title:'Omdat en dat',zh:'从句与句末动词',level:'A2–B1',rule:'在由 omdat、dat 等引导的从句中，限定动词通常放在从句末尾。\n例如：Ik blijf thuis omdat ik ziek ben。',examples:[['Ik blijf thuis omdat ik ziek ben.','我待在家，因为我生病了。'],['Ik denk dat hij komt.','我认为他会来。']],q:'Ik blijf thuis omdat ik ziek ___.',choices:['ben','zijn','is'],correct:0,why:'主语 ik 搭配 ben；从句中 ben 放在句末。'},
-{"title": "Bezittelijke voornaamwoorden", "zh": "物主代词", "level": "A1", "rule": "mijn = 我的；jouw/je = 你的；zijn = 他的；haar = 她的；ons/onze = 我们的。ons 用在单数 het-woord 前；其他常见情况用 onze。", "examples": [["Dit is mijn fiets.", "这是我的自行车。"], ["Ons huis is klein.", "我们的房子很小。"]], "q": "Dit is ___ boek. (我的)", "choices": ["mijn", "jouw", "zijn"], "correct": 0, "why": "mijn 表示“我的”，可用于 de-woord 和 het-woord。"},
-{"title": "Aanwijzende voornaamwoorden", "zh": "指示代词 dit/dat/deze/die", "level": "A1", "rule": "靠近时：de-woord 用 deze，het-woord 用 dit；较远时：de-woord 用 die，het-woord 用 dat。复数按 de-woord 处理。", "examples": [["Deze tafel is groot.", "这张桌子很大。"], ["Dit boek is mooi.", "这本书很好看。"]], "q": "___ boek hier is nieuw.", "choices": ["Deze", "Dit", "Die"], "correct": 1, "why": "boek 是 het-woord，指近处用 dit。"},
-{"title": "Bijvoeglijke naamwoorden", "zh": "形容词词尾 -e", "level": "A1–A2", "rule": "形容词放在名词前通常加 -e：de grote hond、het grote huis。例外：单数、不定的 het-woord 前通常不加 -e：een groot huis。", "examples": [["Een grote hond loopt.", "一只大狗在走。"], ["Ik zie een klein huis.", "我看到一栋小房子。"]], "q": "Ik zie een ___ huis.", "choices": ["kleine", "klein", "kleins"], "correct": 1, "why": "een + 单数 het-woord huis，形容词一般不加 -e。"},
-{"title": "Modale werkwoorden", "zh": "情态动词 kunnen/moeten/willen", "level": "A1", "rule": "kunnen = 能；moeten = 必须；willen = 想要。情态动词在主句中变位，另一个动词通常以不定式放在句末。", "examples": [["Ik kan zwemmen.", "我会游泳。"], ["Wij moeten huiswerk maken.", "我们必须做作业。"]], "q": "Ik ___ Nederlands leren. (想要)", "choices": ["wil", "willen", "wilt"], "correct": 0, "why": "ik 的 willen 形式是 wil；leren 放在句末。"},
-{"title": "Scheidbare werkwoorden", "zh": "可分动词", "level": "A1–A2", "rule": "在简单主句中，某些动词的前缀分离并移到句末：opstaan → Ik sta vroeg op。与情态动词合用时通常保持不定式：Ik moet vroeg opstaan。", "examples": [["Ik sta om zeven uur op.", "我七点起床。"], ["Hij belt zijn moeder op.", "他给妈妈打电话。"]], "q": "Ik ___ om zeven uur ___. (opstaan)", "choices": ["sta ... op", "opsta ...", "staan ... op"], "correct": 0, "why": "opstaan 在现在时的主句中分离：ik sta ... op。"},
-{"title": "Gebiedende wijs", "zh": "祈使句", "level": "A1–A2", "rule": "祈使句常用动词词干开头，不写主语：Kom binnen!；Wacht even!；与说话对象交流时可加 alsjeblieft 表示礼貌。", "examples": [["Kom hier!", "到这里来！"], ["Lees dit boek, alsjeblieft.", "请读这本书。"]], "q": "___ even! (wachten)", "choices": ["Wacht", "Wachten", "Wachtte"], "correct": 0, "why": "wachten 的祈使形式常用词干 wacht。"},
-{"title": "Voorzetsels van plaats", "zh": "地点介词", "level": "A1", "rule": "in = 在……里面；op = 在……上面；onder = 在……下面；naast = 在……旁边；tussen = 在……之间。", "examples": [["De kat ligt onder de tafel.", "猫躺在桌子下面。"], ["De tas staat naast de stoel.", "包在椅子旁边。"]], "q": "De bal ligt ___ de tafel. (在桌子下面)", "choices": ["op", "onder", "naast"], "correct": 1, "why": "onder 表示在……下面。"},
-{"title": "Tijd: om, op en in", "zh": "时间介词", "level": "A1", "rule": "om 表示钟点：om acht uur；op 常用于星期或具体日期：op maandag；in 常用于月份、年份或季节：in november。", "examples": [["De les begint om negen uur.", "课程九点开始。"], ["We sporten op zaterdag.", "我们星期六运动。"]], "q": "De school begint ___ acht uur.", "choices": ["op", "om", "in"], "correct": 1, "why": "具体钟点通常使用 om。"},
-{"title": "Er is / er zijn", "zh": "存在句", "level": "A1–A2", "rule": "er is 用于单数存在物；er zijn 用于复数存在物：Er is een boek；Er zijn twee boeken。", "examples": [["Er is een kat in de tuin.", "花园里有一只猫。"], ["Er zijn drie appels.", "有三个苹果。"]], "q": "Er ___ twee stoelen in de kamer.", "choices": ["is", "zijn", "ben"], "correct": 1, "why": "twee stoelen 是复数，因此用 er zijn。"},
-{"title": "Graag en liever", "zh": "喜欢和更喜欢", "level": "A1–A2", "rule": "graag 与动词连用表示喜欢做某事：Ik lees graag。liever 表示更愿意：Ik lees liever thuis。het liefst 表示最喜欢。", "examples": [["Ik speel graag buiten.", "我喜欢在外面玩。"], ["Ik drink liever water.", "我更愿意喝水。"]], "q": "Ik ___ graag boeken.", "choices": ["lees", "leest", "lezen"], "correct": 0, "why": "主语 ik 搭配 lees，graag 用来表达喜欢阅读。"},
-{"title": "Vergrotende en overtreffende trap", "zh": "比较级与最高级", "level": "A2", "rule": "常见比较级：klein → kleiner；最高级：kleinst。比较时常用 dan：groter dan；形容词前的最高级常见形式是 de/het grootste。", "examples": [["Mijn fiets is groter dan jouw fiets.", "我的自行车比你的大。"], ["Dit is de kleinste kamer.", "这是最小的房间。"]], "q": "Een olifant is ___ dan een muis.", "choices": ["groot", "groter", "grootst"], "correct": 1, "why": "两者比较时用比较级 groter + dan。"},
-{"title": "Verleden tijd: imperfectum", "zh": "一般过去时", "level": "A2", "rule": "规则动词过去时单数常加 -te 或 -de，复数常加 -ten 或 -den，例如 werken → werkte，spelen → speelde。不规则动词需要单独记忆，如 gaan → ging。", "examples": [["Ik werkte gisteren.", "我昨天工作了。"], ["Wij speelden buiten.", "我们以前在外面玩。"]], "q": "Gisteren ___ ik thuis. (werken)", "choices": ["werk", "werkte", "werken"], "correct": 1, "why": "规则动词 werken 的过去时单数是 werkte。"},
-{"title": "Toekomende tijd", "zh": "将来表达", "level": "A2", "rule": "荷兰语可用 gaan + 不定式表示计划或即将发生的事情；也可用 zullen + 不定式，或现在时搭配将来时间词表达未来。", "examples": [["Ik ga morgen zwemmen.", "我明天要去游泳。"], ["We zullen het zien.", "我们到时会知道。"]], "q": "Morgen ga ik een boek ___.", "choices": ["lees", "leest", "lezen"], "correct": 2, "why": "gaan + 动词不定式，lezen 保持原形。"},
-{"title": "Voegwoorden: en, maar, want", "zh": "并列连词", "level": "A2", "rule": "en = 和；maar = 但是；want = 因为。它们连接主句时，后面的句子通常保持主句语序；不同于 omdat 引导的从句。", "examples": [["Ik ben moe, maar ik speel nog.", "我累了，但还在玩。"], ["Ik blijf thuis, want ik ben ziek.", "我待在家，因为我生病了。"]], "q": "Ik ga niet naar buiten, ___ het regent.", "choices": ["want", "maar", "en"], "correct": 0, "why": "want 表示原因，并保留后面主句的语序 het regent。"},
-{"title": "Als en wanneer", "zh": "条件与时间从句", "level": "A2", "rule": "als 可以表示“如果”或某些反复发生的“当……时”；wanneer 常用于时间“当……时”。从句中限定动词常放在后面。", "examples": [["Als het regent, blijf ik thuis.", "如果下雨，我就待在家。"], ["Wanneer de les begint, luister ik.", "上课开始时，我认真听。"]], "q": "Als ik tijd ___, speel ik buiten.", "choices": ["heb", "heeft", "hebben"], "correct": 0, "why": "als 从句中 ik 对应 heb，放在从句末。"},
-{"title": "Te + infinitief", "zh": "te + 动词不定式", "level": "A2", "rule": "某些结构需要 te + 不定式，例如 proberen te leren、vergeten te bellen。但情态动词 kunnen、moeten 等通常直接接不定式，不加 te。", "examples": [["Ik probeer Nederlands te leren.", "我尝试学习荷兰语。"], ["Zij vergeet de deur te sluiten.", "她忘记关门。"]], "q": "Ik probeer elke dag ___ lezen.", "choices": ["te", "om", "aan"], "correct": 0, "why": "proberen 常与 te + 不定式搭配：proberen te lezen。"},
-{"title": "Wederkerende werkwoorden", "zh": "反身动词", "level": "A2", "rule": "反身代词随人称变化：ik was me；jij wast je；hij wast zich；wij wassen ons。有些动词必须搭配反身代词。", "examples": [["Ik was me elke ochtend.", "我每天早晨洗漱。"], ["Hij kleedt zich aan.", "他在穿衣服。"]], "q": "Hij wast ___ voor het eten.", "choices": ["me", "zich", "ons"], "correct": 1, "why": "hij 对应反身代词 zich。"},
-{"title": "Relatieve bijzinnen", "zh": "关系从句 die/dat", "level": "A2", "rule": "关系代词通常对应先行词的冠词：de jongen die...；het boek dat...；复数用 die。从句的限定动词一般靠近句末。", "examples": [["De jongen die daar loopt, is mijn broer.", "在那里走路的男孩是我哥哥。"], ["Het boek dat ik lees, is leuk.", "我正在读的书很有趣。"]], "q": "Het huis ___ daar staat, is groot.", "choices": ["die", "dat", "wat"], "correct": 1, "why": "het huis 是单数 het-woord，关系代词用 dat。"},
-{"title": "Om ... te", "zh": "目的表达", "level": "A2", "rule": "om ... te + 不定式常表示“为了……”。带宾语或其他成分时，它们可以位于 om 和 te 之间。", "examples": [["Ik leer Nederlands om met vrienden te praten.", "我学习荷兰语是为了和朋友交流。"], ["We gaan naar buiten om te spelen.", "我们出去玩。"]], "q": "Ik ga naar de bibliotheek om ___ lezen.", "choices": ["te", "dat", "en"], "correct": 0, "why": "表达目的时可用 om te + 不定式。"},
-{"title": "Tellen en rangtelwoorden", "zh": "数量词与序数词", "level": "A1–A2", "rule": "数量词：een, twee, drie。序数词：eerste, tweede, derde, vierde。用“第几”时要区分数量词和序数词。", "examples": [["Ik heb drie boeken.", "我有三本书。"], ["Dit is mijn tweede fiets.", "这是我的第二辆自行车。"]], "q": "Dit is mijn ___ dag op school. (第一)", "choices": ["een", "eerste", "eerst"], "correct": 1, "why": "表示“第一天”用序数词 eerste。"}
+  {
+    "title": "Persoonlijke voornaamwoorden",
+    "zh": "人称代词",
+    "level": "A1",
+    "rule": "主语代词放在变位动词前，用来说明“谁做这件事”。je、we、ze 常用于不强调的人称；jij、wij、zij 可以用于强调。zij/ze 既能指“她”，也能指“他们/她们”，要结合动词判断。",
+    "examples": [
+      [
+        "Ik woon in België.",
+        "我住在比利时。"
+      ],
+      [
+        "Wij leren Nederlands.",
+        "我们学习荷兰语。"
+      ]
+    ],
+    "q": "___ woon in België.（我住在比利时）",
+    "choices": [
+      "Ik",
+      "Hij",
+      "Wij"
+    ],
+    "correct": 0,
+    "why": "“我”作主语时用 ik。",
+    "exampleNotes": [
+      "Ik woon in België：ik 是“我”，所以用单数形式 woon。",
+      "Wij leren Nederlands：wij 是“我们”，所以用复数形式 leren。"
+    ]
+  },
+  {
+    "title": "Zijn — to be",
+    "zh": "动词 zijn（是）",
+    "level": "A1",
+    "rule": "zijn 是不规则动词，不能套用普通的词干加 -t 规则。除表示“是”，它还可以连接状态、位置和年龄；荷兰语说年龄时用 zijn。复数主语统一用 zijn。",
+    "examples": [
+      [
+        "Ik ben moe.",
+        "我累了。"
+      ],
+      [
+        "Zij is thuis.",
+        "她在家。"
+      ]
+    ],
+    "q": "Hij ___ acht jaar.",
+    "choices": [
+      "ben",
+      "is",
+      "zijn"
+    ],
+    "correct": 1,
+    "why": "hij（他）对应 is。",
+    "exampleNotes": [
+      "Ik ben moe：ik 搭配 ben，moe 表示“累”。",
+      "Zij is thuis：is 表明 zij 在这里指“她”；若表示“她们在家”，则是 Zij zijn thuis。"
+    ]
+  },
+  {
+    "title": "Hebben — to have",
+    "zh": "动词 hebben（有）",
+    "level": "A1",
+    "rule": "hebben 表示拥有，也用于一些固定表达。单数人称要分别记住 heb、hebt、heeft；复数用 hebben。jij/je 作主语且放在动词后时，hebt 的 -t 消失：Heb je een fiets?",
+    "examples": [
+      [
+        "Ik heb een fiets.",
+        "我有一辆自行车。"
+      ],
+      [
+        "Zij heeft een boek.",
+        "她有一本书。"
+      ]
+    ],
+    "q": "Zij ___ een kat.",
+    "choices": [
+      "heb",
+      "heeft",
+      "hebben"
+    ],
+    "correct": 1,
+    "why": "zij 表示“她”时，hebben 变为 heeft。",
+    "exampleNotes": [
+      "Ik heb een fiets：主语 ik 对应 heb；een fiets 是拥有的东西。",
+      "Zij heeft een boek：heeft 表明 zij 指“她”；“她们有一本书”用 Zij hebben een boek。"
+    ]
+  },
+  {
+    "title": "De of het?",
+    "zh": "定冠词 de / het",
+    "level": "A1",
+    "rule": "de 和 het 是定冠词，通常指说话双方知道的或已提过的对象。名词属于 de-woord 还是 het-woord 往往需要一起记忆。复数统一用 de；指小词的单数通常用 het，如 het huisje。",
+    "examples": [
+      [
+        "De fiets is rood.",
+        "这辆自行车是红色的。"
+      ],
+      [
+        "Het huis is groot.",
+        "这栋房子很大。"
+      ]
+    ],
+    "q": "___ huis is groot.",
+    "choices": [
+      "De",
+      "Het",
+      "Een"
+    ],
+    "correct": 1,
+    "why": "huis 是 het-woord，因此说 het huis。",
+    "exampleNotes": [
+      "De fiets is rood：fiets 是 de-woord，所以用 de。",
+      "Het huis is groot：huis 是 het-woord；变成复数时说 de huizen。"
+    ]
+  },
+  {
+    "title": "Een — a / an",
+    "zh": "不定冠词 een",
+    "level": "A1",
+    "rule": "een 不区分 de-woord 和 het-woord，常在第一次提到某个事物、或不指定哪一个时使用。普通冠词 een 通常不重读；强调数字“一”可以写 één。复数不加 een，如 Ik heb boeken。",
+    "examples": [
+      [
+        "Ik heb een appel.",
+        "我有一个苹果。"
+      ],
+      [
+        "Dat is een boek.",
+        "那是一本书。"
+      ]
+    ],
+    "q": "Ik eet ___ appel.",
+    "choices": [
+      "een",
+      "het",
+      "de"
+    ],
+    "correct": 0,
+    "why": "这里表示“一个苹果”，使用 een。",
+    "exampleNotes": [
+      "Ik heb een appel：只说明有一个苹果，没有指定哪一个。",
+      "Dat is een boek：说明那件东西属于“书”这一类；若指已知的那本书，可用 het boek。"
+    ]
+  },
+  {
+    "title": "Tegenwoordige tijd",
+    "zh": "一般现在时动词变位",
+    "level": "A1",
+    "rule": "变位先看主语，再看位置。规则动词现在时通常是 ik + 词干，jij/hij/zij/het + 词干+t，复数主语 + 不定式。构成词干时可能要调整拼写，如 maken → maak；词干已有 t 时不再多加一个 t，如 zitten → zit。",
+    "examples": [
+      [
+        "Ik werk vandaag.",
+        "我今天工作。"
+      ],
+      [
+        "Hij werkt op school.",
+        "他在学校工作。"
+      ]
+    ],
+    "q": "Hij ___ vandaag. (werken)",
+    "choices": [
+      "werk",
+      "werkt",
+      "werken"
+    ],
+    "correct": 1,
+    "why": "hij + 规则动词通常加 -t。",
+    "exampleNotes": [
+      "Ik werk vandaag：werken 的词干为 werk，ik 不加 -t。",
+      "Hij werkt op school：hij 对应 werk+t，即 werkt。"
+    ]
+  },
+  {
+    "title": "Woordvolgorde",
+    "zh": "主句语序：动词第二位",
+    "level": "A1",
+    "rule": "“第二位”是第二个句子成分，不是第二个单词。主句开头可以是主语，也可以是一整段时间或地点。若其他成分放在开头，限定动词仍在第二位，主语紧跟其后，这叫倒装。",
+    "examples": [
+      [
+        "Ik ga vandaag naar school.",
+        "我今天去学校。"
+      ],
+      [
+        "Vandaag ga ik naar school.",
+        "今天我去学校。"
+      ]
+    ],
+    "q": "Vandaag ___ ik naar school.",
+    "choices": [
+      "ik ga",
+      "ga",
+      "gaan"
+    ],
+    "correct": 1,
+    "why": "Vandaag 放在句首时，动词 ga 必须紧跟其后。",
+    "exampleNotes": [
+      "Ik | ga | vandaag naar school：主语在第一位，ga 在第二位。",
+      "Vandaag | ga | ik naar school：时间放到第一位后，主语 ik 移到 ga 后。"
+    ]
+  },
+  {
+    "title": "Vragen stellen",
+    "zh": "一般疑问句",
+    "level": "A1",
+    "rule": "是非问句把限定动词放到主语前。带疑问词的问句通常是“疑问词 + 限定动词 + 主语”。jij/je 作主语且跟在动词后时，一般去掉变位加上的 -t；但词干本身的 t 保留，如 Eet je?",
+    "examples": [
+      [
+        "Ben je thuis?",
+        "你在家吗？"
+      ],
+      [
+        "Waar woon jij?",
+        "你住在哪里？"
+      ]
+    ],
+    "q": "___ je Nederlands?（你会说荷兰语吗？）",
+    "choices": [
+      "Spreek",
+      "Jij spreekt",
+      "Spreken"
+    ],
+    "correct": 0,
+    "why": "一般疑问句动词在前；jij/je 在动词后时通常不用 -t：Spreek je?",
+    "exampleNotes": [
+      "Ben je thuis?：ben 放在 je 前，表示“你在家吗”。",
+      "Waar woon jij?：waar 问地点，接动词 woon，再接主语 jij；不写 woont jij。"
+    ]
+  },
+  {
+    "title": "Niet of geen?",
+    "zh": "否定词 niet / geen",
+    "level": "A1–A2",
+    "rule": "否定带 een 或不带冠词的不定名词时，通常用 geen：een auto → geen auto。否定动作、形容词或有定冠词/物主词的名词时通常用 niet。niet 的位置取决于所否定的内容，不能一律放在句末。",
+    "examples": [
+      [
+        "Ik heb geen auto.",
+        "我没有汽车。"
+      ],
+      [
+        "Ik slaap niet.",
+        "我不睡觉。"
+      ]
+    ],
+    "q": "Ik heb ___ hond.",
+    "choices": [
+      "niet",
+      "geen",
+      "nee"
+    ],
+    "correct": 1,
+    "why": "hond 是这里被否定的不定名词，用 geen。",
+    "exampleNotes": [
+      "Ik heb geen auto：否定“有一辆车”，用 geen 替代不定冠词。",
+      "Ik slaap niet：否定睡觉这个动作，用 niet；“车不是红的”是 De auto is niet rood。"
+    ]
+  },
+  {
+    "title": "Meervoud",
+    "zh": "名词复数",
+    "level": "A1–A2",
+    "rule": "复数形式要连同名词一起记忆，常见结尾为 -en 和 -s。加 -en 时注意长短元音和辅音的拼写，如 raam → ramen、kat → katten。无论单数冠词是 de 还是 het，复数都用 de。",
+    "examples": [
+      [
+        "Twee boeken liggen op tafel.",
+        "两本书放在桌上。"
+      ],
+      [
+        "De kinderen spelen.",
+        "孩子们在玩。"
+      ]
+    ],
+    "q": "Twee ___ (boek)",
+    "choices": [
+      "boeks",
+      "boeken",
+      "boek"
+    ],
+    "correct": 1,
+    "why": "boek 的复数是 boeken。",
+    "exampleNotes": [
+      "Twee boeken liggen op tafel：boek 加 -en 成 boeken；主语复数，因此用 liggen。",
+      "De kinderen spelen：kind 的复数是不规则的 kinderen，不能写 kinden。"
+    ]
+  },
+  {
+    "title": "Verleden tijd: perfectum",
+    "zh": "完成过去时",
+    "level": "A2",
+    "rule": "完成时用一个变位的助动词和一个过去分词。主句中助动词在第二位，分词通常在句末。多数动词用 hebben；一些表示位置变化或状态变化的动词用 zijn。运动动词的助动词也可能随意思变化，不能一概用 zijn。",
+    "examples": [
+      [
+        "Ik heb gegeten.",
+        "我已经吃过了。"
+      ],
+      [
+        "Wij zijn naar huis gegaan.",
+        "我们已经回家了。"
+      ]
+    ],
+    "q": "Ik ___ gisteren gewerkt.",
+    "choices": [
+      "ben",
+      "heb",
+      "heeft"
+    ],
+    "correct": 1,
+    "why": "werken 的完成时通常用 hebben；ik 对应 heb。",
+    "exampleNotes": [
+      "Ik heb gegeten：heb 随 ik 变位，gegeten 是 eten 的不规则过去分词。",
+      "Wij zijn naar huis gegaan：gaan 表示去了另一地点，用 zijn；wij 对应 zijn，分词 gegaan 放句末。"
+    ]
+  },
+  {
+    "title": "Omdat en dat",
+    "zh": "从句与句末动词",
+    "level": "A2–B1",
+    "rule": "omdat 引出原因，dat 引出想法、陈述等内容。它们引导从句，单一限定动词通常移到从句末尾。主句仍遵守动词第二位。若有多个动词，则在从句末形成动词组，词序需要进一步学习。",
+    "examples": [
+      [
+        "Ik blijf thuis omdat ik ziek ben.",
+        "我待在家，因为我生病了。"
+      ],
+      [
+        "Ik denk dat hij komt.",
+        "我认为他会来。"
+      ]
+    ],
+    "q": "Ik blijf thuis omdat ik ziek ___.",
+    "choices": [
+      "ben",
+      "zijn",
+      "is"
+    ],
+    "correct": 0,
+    "why": "主语 ik 搭配 ben；从句中 ben 放在句末。",
+    "exampleNotes": [
+      "Ik blijf thuis omdat ik ziek ben：原因从句中不用 ik ben ziek，而把 ben 移到 ziek 后。",
+      "Ik denk dat hij komt：dat 后是从句；hij 的动词 komt 在从句末尾。"
+    ]
+  },
+  {
+    "title": "Bezittelijke voornaamwoorden",
+    "zh": "物主代词",
+    "level": "A1",
+    "rule": "物主词放在名词前，通常不再与 de/het 连用。mijn、jouw、zijn、haar 的选择看“拥有者是谁”。ons/onze 的选择看后面的名词：单数 het-woord 用 ons；单数 de-woord 和所有复数用 onze。",
+    "examples": [
+      [
+        "Dit is mijn fiets.",
+        "这是我的自行车。"
+      ],
+      [
+        "Ons huis is klein.",
+        "我们的房子很小。"
+      ]
+    ],
+    "q": "Dit is ___ boek. (我的)",
+    "choices": [
+      "mijn",
+      "jouw",
+      "zijn"
+    ],
+    "correct": 0,
+    "why": "mijn 表示“我的”，可用于 de-woord 和 het-woord。",
+    "exampleNotes": [
+      "Dit is mijn fiets：拥有者是“我”，用 mijn，不能写 de mijn fiets。",
+      "Ons huis is klein：huis 是单数 het-woord，因此用 ons；复数为 onze huizen。"
+    ]
+  },
+  {
+    "title": "Aanwijzende voornaamwoorden",
+    "zh": "指示代词 dit/dat/deze/die",
+    "level": "A1",
+    "rule": "先判断名词是单数 de-woord、单数 het-woord，还是复数，再判断远近。近：deze/dit；远：die/dat。复数不管原来用 de 还是 het，都用 deze/die。",
+    "examples": [
+      [
+        "Deze tafel is groot.",
+        "这张桌子很大。"
+      ],
+      [
+        "Dit boek is mooi.",
+        "这本书很好看。"
+      ]
+    ],
+    "q": "___ boek hier is nieuw.",
+    "choices": [
+      "Deze",
+      "Dit",
+      "Die"
+    ],
+    "correct": 1,
+    "why": "boek 是 het-woord，指近处用 dit。",
+    "exampleNotes": [
+      "Deze tafel is groot：tafel 是单数 de-woord，近处用 deze，远处则用 die tafel。",
+      "Dit boek is mooi：boek 是单数 het-woord，近处用 dit；复数是 deze boeken。"
+    ]
+  },
+  {
+    "title": "Bijvoeglijke naamwoorden",
+    "zh": "形容词词尾 -e",
+    "level": "A1–A2",
+    "rule": "先判断形容词的位置：放在名词前时通常加 -e；放在 zijn 后说明状态时不加 -e，如 Het huis is groot。名词前最常用的例外是“不定 + 单数 + het-woord”，如 een klein huis；有定冠词时则是 het kleine huis。",
+    "examples": [
+      [
+        "Een grote hond loopt.",
+        "一只大狗在走。"
+      ],
+      [
+        "Ik zie een klein huis.",
+        "我看到一栋小房子。"
+      ]
+    ],
+    "q": "Ik zie een ___ huis.",
+    "choices": [
+      "kleine",
+      "klein",
+      "kleins"
+    ],
+    "correct": 1,
+    "why": "een + 单数 het-woord huis，形容词一般不加 -e。",
+    "exampleNotes": [
+      "Een grote hond loopt：hond 是 de-woord，即使用 een，形容词也加 -e。",
+      "Ik zie een klein huis：huis 是单数 het-woord，前面用不定冠词 een，所以 klein 不加 -e；指定那栋房子则是 het kleine huis。"
+    ]
+  },
+  {
+    "title": "Modale werkwoorden",
+    "zh": "情态动词 kunnen/moeten/willen",
+    "level": "A1",
+    "rule": "情态动词表达能力、必要性或意愿，由它随主语变位；真正要做的动作通常用不定式放在主句末尾。常见单数为 ik kan/moet/wil，复数为 wij kunnen/moeten/willen。后面的不定式通常不加 te。",
+    "examples": [
+      [
+        "Ik kan zwemmen.",
+        "我会游泳。"
+      ],
+      [
+        "Wij moeten huiswerk maken.",
+        "我们必须做作业。"
+      ]
+    ],
+    "q": "Ik ___ Nederlands leren. (想要)",
+    "choices": [
+      "wil",
+      "willen",
+      "wilt"
+    ],
+    "correct": 0,
+    "why": "ik 的 willen 形式是 wil；leren 放在句末。",
+    "exampleNotes": [
+      "Ik kan zwemmen：kan 表示“会/能”，zwemmen 保持原形。",
+      "Wij moeten huiswerk maken：wij 对应 moeten，动作 maken 放在宾语 huiswerk 后。"
+    ]
+  },
+  {
+    "title": "Scheidbare werkwoorden",
+    "zh": "可分动词",
+    "level": "A1–A2",
+    "rule": "可分动词由前缀和动词组成。在简单主句里，动词变位并放第二位，前缀通常放句末。若使用情态动词，可分动词以完整不定式放句末。并非所有带前缀的动词都可分，需要连同读音和用法记忆。",
+    "examples": [
+      [
+        "Ik sta om zeven uur op.",
+        "我七点起床。"
+      ],
+      [
+        "Hij belt zijn moeder op.",
+        "他给妈妈打电话。"
+      ]
+    ],
+    "q": "Ik ___ om zeven uur ___. (opstaan)",
+    "choices": [
+      "sta ... op",
+      "opsta ...",
+      "staan ... op"
+    ],
+    "correct": 0,
+    "why": "opstaan 在现在时的主句中分离：ik sta ... op。",
+    "exampleNotes": [
+      "Ik sta om zeven uur op：opstaan 拆成 sta 和 op，中间可放时间。",
+      "Hij belt zijn moeder op：opbellen 拆成 belt 和 op；用情态动词时为 Hij wil zijn moeder opbellen。"
+    ]
+  },
+  {
+    "title": "Gebiedende wijs",
+    "zh": "祈使句",
+    "level": "A1–A2",
+    "rule": "祈使句用于请求、指令和建议，通常以词干开头并省略主语。alsjeblieft 可让请求更礼貌；也可用 Wilt u ...? 等问句表达更客气的请求。不规则形式需要记忆，如 zijn 的祈使形式 wees。",
+    "examples": [
+      [
+        "Kom hier!",
+        "到这里来！"
+      ],
+      [
+        "Lees dit boek, alsjeblieft.",
+        "请读这本书。"
+      ]
+    ],
+    "q": "___ even! (wachten)",
+    "choices": [
+      "Wacht",
+      "Wachten",
+      "Wachtte"
+    ],
+    "correct": 0,
+    "why": "wachten 的祈使形式常用词干 wacht。",
+    "exampleNotes": [
+      "Kom hier!：komen 的词干是 kom，不写 jij，也不写 komt。",
+      "Lees dit boek, alsjeblieft：lezen 的词干是 lees，dit boek 是要读的对象，alsjeblieft 表示“请”。"
+    ]
+  },
+  {
+    "title": "Voorzetsels van plaats",
+    "zh": "地点介词",
+    "level": "A1",
+    "rule": "地点介词说明物体之间的位置关系，通常放在名词短语前。in 是内部，op 常指接触某个表面，onder 是下方，naast 是旁边，tussen 表示在两个或多个对象之间。先找参考物，再选介词。",
+    "examples": [
+      [
+        "De kat ligt onder de tafel.",
+        "猫躺在桌子下面。"
+      ],
+      [
+        "De tas staat naast de stoel.",
+        "包在椅子旁边。"
+      ]
+    ],
+    "q": "De bal ligt ___ de tafel. (在桌子下面)",
+    "choices": [
+      "op",
+      "onder",
+      "naast"
+    ],
+    "correct": 1,
+    "why": "onder 表示在……下面。",
+    "exampleNotes": [
+      "De kat ligt onder de tafel：以桌子为参考物，猫的位置在其下方，用 onder。",
+      "De tas staat naast de stoel：包在椅子旁边，不在椅子上；在椅子上则用 op de stoel。"
+    ]
+  },
+  {
+    "title": "Tijd: om, op en in",
+    "zh": "时间介词",
+    "level": "A1",
+    "rule": "先判断时间的类型：具体钟点通常用 om；星期和日期用 op；月份、年份、季节通常用 in。与 morgen、vandaag、volgende week 等直接表示时间的词组连用时，通常不用这些介词。",
+    "examples": [
+      [
+        "De les begint om negen uur.",
+        "课程九点开始。"
+      ],
+      [
+        "We sporten op zaterdag.",
+        "我们星期六运动。"
+      ]
+    ],
+    "q": "De school begint ___ acht uur.",
+    "choices": [
+      "op",
+      "om",
+      "in"
+    ],
+    "correct": 1,
+    "why": "具体钟点通常使用 om。",
+    "exampleNotes": [
+      "De les begint om negen uur：negen uur 是具体钟点，用 om。",
+      "We sporten op zaterdag：zaterdag 是星期，用 op；“十一月运动”可说 We sporten in november。"
+    ]
+  },
+  {
+    "title": "Er is / er zijn",
+    "zh": "存在句",
+    "level": "A1–A2",
+    "rule": "er is/er zijn 常用来介绍某处存在的事物。动词取决于后面的存在物是单数还是复数，而不是 er。通常接不定名词；若已知某本书并说明位置，可说 Het boek ligt op tafel。",
+    "examples": [
+      [
+        "Er is een kat in de tuin.",
+        "花园里有一只猫。"
+      ],
+      [
+        "Er zijn drie appels.",
+        "有三个苹果。"
+      ]
+    ],
+    "q": "Er ___ twee stoelen in de kamer.",
+    "choices": [
+      "is",
+      "zijn",
+      "ben"
+    ],
+    "correct": 1,
+    "why": "twee stoelen 是复数，因此用 er zijn。",
+    "exampleNotes": [
+      "Er is een kat in de tuin：een kat 是单数，因此用 is。",
+      "Er zijn drie appels：drie appels 是复数，因此用 zijn，不能用 is。"
+    ]
+  },
+  {
+    "title": "Graag en liever",
+    "zh": "喜欢和更喜欢",
+    "level": "A1–A2",
+    "rule": "graag 是副词，与动作连用表示喜欢做某事，不是需要独立变位的“喜欢”动词。liever 表示比较后的偏好；het liefst 表示最偏好。比较对象可以不明说，也可用 dan 引出。",
+    "examples": [
+      [
+        "Ik speel graag buiten.",
+        "我喜欢在外面玩。"
+      ],
+      [
+        "Ik drink liever water.",
+        "我更愿意喝水。"
+      ]
+    ],
+    "q": "Ik ___ graag boeken.",
+    "choices": [
+      "lees",
+      "leest",
+      "lezen"
+    ],
+    "correct": 0,
+    "why": "主语 ik 搭配 lees，graag 用来表达喜欢阅读。",
+    "exampleNotes": [
+      "Ik speel graag buiten：speel 随 ik 变位，graag 说明喜欢这件事。",
+      "Ik drink liever water：表示相比其他饮料更愿意喝水；最喜欢喝水可说 Ik drink het liefst water。"
+    ]
+  },
+  {
+    "title": "Vergrotende en overtreffende trap",
+    "zh": "比较级与最高级",
+    "level": "A2",
+    "rule": "比较两者常用比较级 + dan；规则形式通常加 -er。最高级通常加 -st，放在名词前时还要注意词尾，如 de kleinste kamer。部分形式不规则：goed → beter → best，veel → meer → meest。",
+    "examples": [
+      [
+        "Mijn fiets is groter dan jouw fiets.",
+        "我的自行车比你的大。"
+      ],
+      [
+        "Dit is de kleinste kamer.",
+        "这是最小的房间。"
+      ]
+    ],
+    "q": "Een olifant is ___ dan een muis.",
+    "choices": [
+      "groot",
+      "groter",
+      "grootst"
+    ],
+    "correct": 1,
+    "why": "两者比较时用比较级 groter + dan。",
+    "exampleNotes": [
+      "Mijn fiets is groter dan jouw fiets：groter 是 groot 的比较级，dan 引出比较对象。",
+      "Dit is de kleinste kamer：在一组房间中最小，用 kleinste；作表语可说 Deze kamer is het kleinst。"
+    ]
+  },
+  {
+    "title": "Verleden tijd: imperfectum",
+    "zh": "一般过去时",
+    "level": "A2",
+    "rule": "一般过去时常用于叙述过去的状态、习惯或一连串事件。规则动词加 -te(n) 或 -de(n)，由词干末尾对应的辅音决定；拼写变化时要参考不定式的辅音，如 leven → leefde。不规则形式需单独记忆。",
+    "examples": [
+      [
+        "Ik werkte gisteren.",
+        "我昨天工作了。"
+      ],
+      [
+        "Wij speelden buiten.",
+        "我们以前在外面玩。"
+      ]
+    ],
+    "q": "Gisteren ___ ik thuis. (werken)",
+    "choices": [
+      "werk",
+      "werkte",
+      "werken"
+    ],
+    "correct": 1,
+    "why": "规则动词 werken 的过去时单数是 werkte。",
+    "exampleNotes": [
+      "Ik werkte gisteren：werken 的词干末尾 k 对应 -te；ik 单数，用 werkte。",
+      "Wij speelden buiten：spelen 用 -de，wij 为复数再加 n，得到 speelden。"
+    ]
+  },
+  {
+    "title": "Toekomende tijd",
+    "zh": "将来表达",
+    "level": "A2",
+    "rule": "gaan + 不定式常表示计划或即将发生的事；zullen + 不定式也可表达预期、承诺或提议。已有明确将来时间词时，现在时也常用于未来。gaan 在这种结构里不一定表示身体移动。",
+    "examples": [
+      [
+        "Ik ga morgen zwemmen.",
+        "我明天要去游泳。"
+      ],
+      [
+        "We zullen het zien.",
+        "我们到时会知道。"
+      ]
+    ],
+    "q": "Morgen ga ik een boek ___.",
+    "choices": [
+      "lees",
+      "leest",
+      "lezen"
+    ],
+    "correct": 2,
+    "why": "gaan + 动词不定式，lezen 保持原形。",
+    "exampleNotes": [
+      "Ik ga morgen zwemmen：ga 随 ik 变位，morgen 指明明天，zwemmen 保持不定式。",
+      "We zullen het zien：zullen 随复数 we 使用，zien 放句末，意思是“我们到时会知道”。"
+    ]
+  },
+  {
+    "title": "Voegwoorden: en, maar, want",
+    "zh": "并列连词",
+    "level": "A2",
+    "rule": "en、maar、want 连接并列成分或主句。连接两个完整主句时，后面的句子通常保留动词第二位，不会像 omdat 从句那样把动词移到末尾。want 说明原因，maar 表示转折。",
+    "examples": [
+      [
+        "Ik ben moe, maar ik speel nog.",
+        "我累了，但还在玩。"
+      ],
+      [
+        "Ik blijf thuis, want ik ben ziek.",
+        "我待在家，因为我生病了。"
+      ]
+    ],
+    "q": "Ik ga niet naar buiten, ___ het regent.",
+    "choices": [
+      "want",
+      "maar",
+      "en"
+    ],
+    "correct": 0,
+    "why": "want 表示原因，并保留后面主句的语序 het regent。",
+    "exampleNotes": [
+      "Ik ben moe, maar ik speel nog：maar 后仍是 ik + speel，表示“虽然累但还在玩”。",
+      "Ik blijf thuis, want ik ben ziek：want 后用 ik ben ziek；改用 omdat 时则是 omdat ik ziek ben。"
+    ]
+  },
+  {
+    "title": "Als en wanneer",
+    "zh": "条件与时间从句",
+    "level": "A2",
+    "rule": "als 可以引导条件，也可表示反复或将来的时间情境；wanneer 可引导时间从句，也可用来问“什么时候”。两者引导从句时遵守从句语序。若整个从句放在句首，主句动词紧接逗号，主语放在动词后。",
+    "examples": [
+      [
+        "Als het regent, blijf ik thuis.",
+        "如果下雨，我就待在家。"
+      ],
+      [
+        "Wanneer de les begint, luister ik.",
+        "上课开始时，我认真听。"
+      ]
+    ],
+    "q": "Als ik tijd ___, speel ik buiten.",
+    "choices": [
+      "heb",
+      "heeft",
+      "hebben"
+    ],
+    "correct": 0,
+    "why": "als 从句中 ik 对应 heb，放在从句末。",
+    "exampleNotes": [
+      "Als het regent, blijf ik thuis：regent 在从句末；整个 als 从句在第一位，主句接 blijf ik。",
+      "Wanneer de les begint, luister ik：begint 在时间从句末；主句用 luister ik，而不是 ik luister。"
+    ]
+  },
+  {
+    "title": "Te + infinitief",
+    "zh": "te + 动词不定式",
+    "level": "A2",
+    "rule": "是否加 te 取决于前面的动词或固定结构。proberen、vergeten 等常接 te + 不定式；kunnen、moeten 等情态动词通常不加 te。可分动词与 te 连用时，te 插入前缀和动词之间，如 op te staan。",
+    "examples": [
+      [
+        "Ik probeer Nederlands te leren.",
+        "我尝试学习荷兰语。"
+      ],
+      [
+        "Zij vergeet de deur te sluiten.",
+        "她忘记关门。"
+      ]
+    ],
+    "q": "Ik probeer elke dag ___ lezen.",
+    "choices": [
+      "te",
+      "om",
+      "aan"
+    ],
+    "correct": 0,
+    "why": "proberen 常与 te + 不定式搭配：proberen te lezen。",
+    "exampleNotes": [
+      "Ik probeer Nederlands te leren：probeer 是变位动词；te leren 是不定式结构。",
+      "Zij vergeet de deur te sluiten：vergeet 变位，de deur 是关闭的对象，te 放在 sluiten 前。"
+    ]
+  },
+  {
+    "title": "Wederkerende werkwoorden",
+    "zh": "反身动词",
+    "level": "A2",
+    "rule": "反身代词表示动作涉及主语自身，形式要与主语匹配：ik–me，jij–je，hij/zij–zich，wij–ons，jullie–je，zij（复数）–zich。有些动词固定需要反身代词；另一些要区分洗自己还是洗别的对象。",
+    "examples": [
+      [
+        "Ik was me elke ochtend.",
+        "我每天早晨洗漱。"
+      ],
+      [
+        "Hij kleedt zich aan.",
+        "他在穿衣服。"
+      ]
+    ],
+    "q": "Hij wast ___ voor het eten.",
+    "choices": [
+      "me",
+      "zich",
+      "ons"
+    ],
+    "correct": 1,
+    "why": "hij 对应反身代词 zich。",
+    "exampleNotes": [
+      "Ik was me elke ochtend：me 指“我自己”；若洗汽车则是 Ik was de auto。",
+      "Hij kleedt zich aan：zich 与 hij 对应；aankleden 同时是可分动词，所以 aan 放句末。"
+    ]
+  },
+  {
+    "title": "Relatieve bijzinnen",
+    "zh": "关系从句 die/dat",
+    "level": "A2",
+    "rule": "关系从句补充说明前面的名词。单数 de-woord 用 die，单数 het-woord 用 dat，复数统一用 die。选择看被说明的名词，不看从句中另一个名词的冠词。动词通常在关系从句末。",
+    "examples": [
+      [
+        "De jongen die daar loopt, is mijn broer.",
+        "在那里走路的男孩是我哥哥。"
+      ],
+      [
+        "Het boek dat ik lees, is leuk.",
+        "我正在读的书很有趣。"
+      ]
+    ],
+    "q": "Het huis ___ daar staat, is groot.",
+    "choices": [
+      "die",
+      "dat",
+      "wat"
+    ],
+    "correct": 1,
+    "why": "het huis 是单数 het-woord，关系代词用 dat。",
+    "exampleNotes": [
+      "De jongen die daar loopt, is mijn broer：jongen 是 de-woord，用 die；loopt 在从句末。",
+      "Het boek dat ik lees, is leuk：boek 是 het-woord，用 dat；ik 是从句主语，lees 在从句末。"
+    ]
+  },
+  {
+    "title": "Om ... te",
+    "zh": "目的表达",
+    "level": "A2",
+    "rule": "om ... te + 不定式说明行动目的，通常与主句共享理解上的动作执行者。宾语、地点等成分可放在 om 与 te 之间。若目的从句需要另一个明确主语，常改用 zodat 等带限定动词的结构。",
+    "examples": [
+      [
+        "Ik leer Nederlands om met vrienden te praten.",
+        "我学习荷兰语是为了和朋友交流。"
+      ],
+      [
+        "We gaan naar buiten om te spelen.",
+        "我们出去玩。"
+      ]
+    ],
+    "q": "Ik ga naar de bibliotheek om ___ lezen.",
+    "choices": [
+      "te",
+      "dat",
+      "en"
+    ],
+    "correct": 0,
+    "why": "表达目的时可用 om te + 不定式。",
+    "exampleNotes": [
+      "Ik leer Nederlands om met vrienden te praten：学习的目的，是与朋友交谈；met vrienden 放在 om 和 te praten 之间。",
+      "We gaan naar buiten om te spelen：om te spelen 说明出去的目的；spelen 保持不定式。"
+    ]
+  },
+  {
+    "title": "Tellen en rangtelwoorden",
+    "zh": "数量词与序数词",
+    "level": "A1–A2",
+    "rule": "基数词表示“多少”，序数词表示“第几”。1–19 的序数词大多加 -de，但有 eerste、derde、achtste 等特殊形式；20 起通常加 -ste，如 twintigste。放在名词前时写完整序数词，如 mijn eerste dag。",
+    "examples": [
+      [
+        "Ik heb drie boeken.",
+        "我有三本书。"
+      ],
+      [
+        "Dit is mijn tweede fiets.",
+        "这是我的第二辆自行车。"
+      ]
+    ],
+    "q": "Dit is mijn ___ dag op school. (第一)",
+    "choices": [
+      "een",
+      "eerste",
+      "eerst"
+    ],
+    "correct": 1,
+    "why": "表示“第一天”用序数词 eerste。",
+    "exampleNotes": [
+      "Ik heb drie boeken：drie 回答有多少本，不是第三本。",
+      "Dit is mijn tweede fiets：tweede 表示我的第二辆自行车；“我有两辆”是 Ik heb twee fietsen。"
+    ]
+  }
 ];
 let grammarIndex=0,grammarAnswered=false,grammarLessonOpen=false;
 function grammarProgress(){try{return JSON.parse(localStorage.getItem('dutchGrammarProgressV1')||'{}')}catch(e){return {}}}
 function showGrammar(){grammarLessonOpen=false;const done=grammarProgress();const count=Object.keys(done).filter(k=>done[k]).length;showSpecial(`<h2 class="special-title">📘 Grammar · Grammatica</h2><p>先学习语法规则和例句，再完成一道练习题。荷兰语为主，中文辅助。</p><p><strong>${count} / ${GRAMMAR_LESSONS.length}</strong> lessons completed</p><div class="grammar-list">${GRAMMAR_LESSONS.map((l,i)=>`<button class="grammar-tile" data-grammar="${i}"><strong>${i+1}. ${l.title} ${done[i]?'✓':''}</strong><span>${l.zh}</span><br><small>${l.level} · Learn + Practice</small></button>`).join('')}</div>`,'grammar');document.querySelectorAll('[data-grammar]').forEach(b=>b.onclick=()=>showGrammarLesson(Number(b.dataset.grammar)));}
-function showGrammarLesson(i){if(i<0||i>=GRAMMAR_LESSONS.length)return;grammarLessonOpen=true;grammarIndex=i;grammarAnswered=false;const l=GRAMMAR_LESSONS[i];showSpecial(`<div class="grammar-lesson"><button class="grammar-btn" id="grammarBack">← All lessons</button><small>${l.level} · ${i+1}/${GRAMMAR_LESSONS.length}</small><p class="grammar-swipe-hint">↑ 上滑下一课 · ↓ 下滑上一课</p><h2>${l.title}</h2><p>${l.zh}</p><h3>📖 Uitleg · 语法讲解</h3><div class="grammar-rule">${l.rule}</div><h3>💬 Voorbeelden · 例句</h3>${l.examples.map(x=>`<div class="grammar-example"><b>${x[0]}</b><button type="button" class="grammar-speak" aria-label="正常语速" style="border:0;background:transparent;font-size:20px;cursor:pointer">🔊</button><button type="button" class="grammar-speak-slow" aria-label="慢速朗读" style="border:0;background:transparent;font-size:20px;cursor:pointer">🐢</button><small>${x[1]}</small></div>`).join('')}<h3>✏️ Oefening · 练习</h3><p><strong>${l.q}</strong></p><div id="grammarChoices">${l.choices.map((x,j)=>`<button class="grammar-choice" data-answer="${j}">${x}</button>`).join('')}</div><div id="grammarFeedback"></div><div id="grammarNext"></div></div>`,'grammar');document.getElementById('grammarBack').onclick=showGrammar;document.querySelectorAll('.grammar-speak').forEach((b,j)=>b.onclick=()=>speakDutch(l.examples[j][0]));document.querySelectorAll('.grammar-speak-slow').forEach((b,j)=>b.onclick=()=>speakDutch(l.examples[j][0],true));document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answerGrammar(Number(b.dataset.answer)));}
-function answerGrammar(j){if(grammarAnswered)return;const l=GRAMMAR_LESSONS[grammarIndex],ok=j===l.correct;document.querySelectorAll('[data-answer]').forEach(b=>{const k=Number(b.dataset.answer);b.disabled=true;if(k===l.correct)b.classList.add('correct');else if(k===j)b.classList.add('wrong')});document.getElementById('grammarFeedback').innerHTML=`<div class="grammar-feedback"><strong>${ok?'✓ Goed gedaan! · 答对了':'✗ Nog eens oefenen · 再练习一下'}</strong><p>${l.why}</p></div>`;if(ok){grammarAnswered=true;const p=grammarProgress();p[grammarIndex]=true;try{localStorage.setItem('dutchGrammarProgressV1',JSON.stringify(p))}catch(e){}document.getElementById('grammarNext').innerHTML='<p class="grammar-swipe-hint">✓ 已完成 · 上滑进入下一课</p>';}else{document.getElementById('grammarNext').innerHTML='<button class="grammar-btn" id="grammarRetry">Try again · 再试一次</button>';document.getElementById('grammarRetry').onclick=()=>showGrammarLesson(grammarIndex);}}
+function showGrammarLesson(i){
+ if(i<0||i>=GRAMMAR_LESSONS.length)return;
+ grammarLessonOpen=true;grammarIndex=i;grammarAnswered=false;const l=GRAMMAR_LESSONS[i];
+ showSpecial(`<div class="grammar-lesson"><h2>${l.title}</h2><p class="grammar-lesson-translation">${l.zh}</p><h3>📖 Uitleg · 语法讲解</h3><div class="grammar-rule">${l.rule}</div><h3>💬 Voorbeelden · 例句</h3>${l.examples.map((x,j)=>`<div class="grammar-example"><div class="grammar-example-row"><b>${x[0]}</b><span class="grammar-example-audio"><button type="button" class="grammar-speak" aria-label="正常语速">🔊</button><button type="button" class="grammar-speak-slow" aria-label="慢速朗读">🐢</button></span></div><small>${x[1]}</small><p class="grammar-example-note">${l.exampleNotes[j]}</p></div>`).join('')}<h3>✏️ Oefening · 练习</h3><p class="grammar-question"><strong>${l.q}</strong></p><div id="grammarChoices">${l.choices.map((x,j)=>`<button class="grammar-choice" data-answer="${j}">${x}</button>`).join('')}</div><div id="grammarFeedback"></div><div id="grammarNext"></div></div>`,'grammar');
+ document.querySelectorAll('.grammar-speak').forEach((b,j)=>b.onclick=()=>speakDutch(l.examples[j][0]));
+ document.querySelectorAll('.grammar-speak-slow').forEach((b,j)=>b.onclick=()=>speakDutch(l.examples[j][0],true));
+ document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>answerGrammar(Number(b.dataset.answer)));
+}
+function answerGrammar(j){if(grammarAnswered)return;const l=GRAMMAR_LESSONS[grammarIndex],ok=j===l.correct;document.querySelectorAll('[data-answer]').forEach(b=>{const k=Number(b.dataset.answer);b.disabled=true;if(k===l.correct)b.classList.add('correct');else if(k===j)b.classList.add('wrong')});document.getElementById('grammarFeedback').innerHTML=`<div class="grammar-feedback"><strong>${ok?'✓ Goed gedaan! · 答对了':'✗ Nog eens oefenen · 再练习一下'}</strong><p>${l.why}</p></div>`;if(ok){grammarAnswered=true;const p=grammarProgress();p[grammarIndex]=true;try{localStorage.setItem('dutchGrammarProgressV1',JSON.stringify(p))}catch(e){}document.getElementById('grammarNext').innerHTML='<p class="grammar-completed">✓ 已完成</p>';}else{document.getElementById('grammarNext').innerHTML='<button class="grammar-btn" id="grammarRetry">Try again · 再试一次</button>';document.getElementById('grammarRetry').onclick=()=>showGrammarLesson(grammarIndex);}}
 
 
 // Offline dialogue module: one prompt/answer pair for every vocabulary entry.
