@@ -23,6 +23,7 @@ function style(){
  #da-panel .da-client{border-top:1px solid #d6dde2;padding:12px 0}
  #da-panel .da-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
  #da-panel .da-grid label{margin:0}
+ #da-account-btn[hidden]{display:none!important}
  #da-account-btn{position:fixed;right:12px;bottom:78px;z-index:1000;background:#195b89;color:white;border:0;border-radius:999px;padding:9px 13px;font:14px system-ui;box-shadow:0 2px 8px #0004;cursor:pointer}
  `;
  document.head.appendChild(el);
@@ -35,6 +36,7 @@ function createPanel(title){
  dialog.addEventListener("click",e=>{if(e.target===dialog)close();});
  return dialog.querySelector("#da-body");
 }
+function updateAccountButton(btn,session){if(!btn)return;btn.hidden=!!session;btn.textContent=session?"账户":"登录";}
 function close(){if(dialog){dialog.remove();dialog=null;}}
 function message(s){const e=dialog?.querySelector("#da-status");if(e)e.textContent=s;}
 function loadClient(){
@@ -45,7 +47,7 @@ function loadClient(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
       client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:false,detectSessionInUrl:true}});
-      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");if(btn)btn.textContent=session?"账户":"登录";if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
+      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");updateAccountButton(btn,session);if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
       resolve(client);
     }catch(e){reject(e);}
    }
@@ -242,7 +244,7 @@ async function admin(){
 }
 async function syncButton(){
  const el=document.getElementById("da-account-btn");if(!el)return;
- try{const c=await loadClient();const {data:{session}}=await c.auth.getSession();el.textContent=session?"账户":"登录";}catch{el.textContent="登录";}
+ try{const c=await loadClient();const {data:{session}}=await c.auth.getSession();updateAccountButton(el,session);}catch{updateAccountButton(el,null);}
 }
 function boot(){
  style();if(document.getElementById("da-account-btn"))return;
@@ -264,16 +266,16 @@ function boot(){
      return;
    }
    if(error||!session?.user){
-     btn.textContent="登录";
+     updateAccountButton(btn,null);
      if(!dialog)ensure(false,true).catch(()=>{});
-   }else btn.textContent="账户";
+   }else updateAccountButton(btn,session);
  }).catch(()=>{
    if(recovering||recoverySeen){
      const body=createPanel("Dutch Learning · 重置链接无法验证");
      body.innerHTML='<p class="da-note">无法验证密码重置链接，请检查网络或重新申请重置邮件。</p><button id="da-recover-again">重新发送重置邮件</button>';
      body.querySelector("#da-recover-again").onclick=()=>forgotPassword();
    }else{
-     btn.textContent="登录";
+     updateAccountButton(btn,null);
      if(!dialog)ensure(false,true).catch(()=>{});
    }
  });
