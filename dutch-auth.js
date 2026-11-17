@@ -23,8 +23,8 @@ function style(){
  #da-panel .da-client{border-top:1px solid #d6dde2;padding:12px 0}
  #da-panel .da-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
  #da-panel .da-grid label{margin:0}
- #da-overlay.da-home{background:linear-gradient(155deg,#eaf5ed,#f8fbff);padding:20px;align-items:center}
- #da-overlay.da-home #da-panel{max-width:390px;max-height:calc(100dvh - 32px);padding:24px 25px;border-radius:22px;text-align:left;box-shadow:0 12px 36px #143d2622}
+ #da-overlay.da-home{background:linear-gradient(155deg,#eaf5ed,#f8fbff);padding:0;align-items:center;justify-content:center;width:100vw;height:100dvh;overflow-y:auto;box-sizing:border-box}
+ #da-overlay.da-home #da-panel{width:100%;max-width:none;min-height:100dvh;max-height:none;padding:max(28px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));border-radius:0;text-align:left;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center} #da-overlay.da-home #da-panel #da-body{width:100%;max-width:390px}
  #da-overlay.da-home #da-panel h3{text-align:center;font-size:23px;margin:4px 0 16px}
  #da-overlay.da-home #da-panel .da-logo{display:block;width:clamp(76px,22vw,106px);height:clamp(76px,22vw,106px);object-fit:contain;margin:0 auto 10px;border-radius:20px}
  #da-overlay.da-home #da-panel input{min-height:44px}
