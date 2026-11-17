@@ -23,6 +23,15 @@ function style(){
  #da-panel .da-client{border-top:1px solid #d6dde2;padding:12px 0}
  #da-panel .da-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
  #da-panel .da-grid label{margin:0}
+ #da-overlay.da-home{background:linear-gradient(155deg,#eaf5ed,#f8fbff);padding:20px;align-items:center}
+ #da-overlay.da-home #da-panel{max-width:390px;max-height:calc(100dvh - 32px);padding:24px 25px;border-radius:22px;text-align:left;box-shadow:0 12px 36px #143d2622}
+ #da-overlay.da-home #da-panel h3{text-align:center;font-size:23px;margin:4px 0 16px}
+ #da-overlay.da-home #da-panel .da-logo{display:block;width:clamp(76px,22vw,106px);height:clamp(76px,22vw,106px);object-fit:contain;margin:0 auto 10px;border-radius:20px}
+ #da-overlay.da-home #da-panel input{min-height:44px}
+ #da-overlay.da-home #da-signin{display:block;width:100%;margin:14px 0 5px;min-height:44px}
+ #da-overlay.da-home #da-forgot{background:transparent;color:#145c8c;display:block;margin:0 0 8px auto;padding:4px}
+ #da-overlay.da-home #da-signup{background:transparent;color:#145c8c;display:block;margin:0 auto}
+ #da-overlay.da-home #da-cancel{display:none}
  #da-account-btn[hidden]{display:none!important}
  #da-account-btn{position:fixed;right:12px;bottom:78px;z-index:1000;background:#195b89;color:white;border:0;border-radius:999px;padding:9px 13px;font:14px system-ui;box-shadow:0 2px 8px #0004;cursor:pointer}
  `;
@@ -88,8 +97,8 @@ async function ensure(requireAi=true,skipSessionCheck=false){
  }
  if(token)return token;
  return new Promise((resolve,reject)=>{
-  const body=createPanel("Dutch Learning · 账户登录");
-  body.innerHTML='<p class="da-note">使用邮箱和密码登录，之后自动授权 Dialogue AI，不再输入长访问密码。</p>'+
+  const body=createPanel("Dutch Learning");\n  dialog.classList.add("da-home");
+  body.innerHTML='<img class="da-logo" src="icon-192.png" alt="Dutch Learning 小树苗图标" />'+
    '<label>邮箱</label><input id="da-email" type="email" autocomplete="username" />'+
    '<label>密码</label><input id="da-password" type="password" autocomplete="current-password" />'+
    '<div id="da-status" class="da-error"></div>'+
@@ -197,7 +206,7 @@ async function account(){
    '<button id="da-logout" class="da-secondary">退出登录</button>'+
    (p?.is_admin?'<button id="da-admin">管理员后台</button>':'')+
    '<button id="da-close" class="da-secondary">关闭</button>';
-  body.querySelector("#da-logout").onclick=async()=>{await c.auth.signOut();profile=null;close();syncButton();};
+  body.querySelector("#da-logout").onclick=async()=>{await c.auth.signOut();profile=null;close();syncButton();ensure(false,true).catch(()=>{});};
   body.querySelector("#da-close").onclick=close;
   if(p?.is_admin)body.querySelector("#da-admin").onclick=()=>admin();
  }catch(e){
@@ -268,7 +277,7 @@ function boot(){
    if(error||!session?.user){
      updateAccountButton(btn,null);
      if(!dialog)ensure(false,true).catch(()=>{});
-   }else updateAccountButton(btn,session);
+   }else {updateAccountButton(btn,session);if(!dialog)ensure(false,true).catch(()=>{});}
  }).catch(()=>{
    if(recovering||recoverySeen){
      const body=createPanel("Dutch Learning · 重置链接无法验证");
