@@ -8,34 +8,7 @@ let client=null,loading=null,dialog=null,profile=null,recoverySeen=false;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function style(){
  if(document.getElementById("dutch-auth-style"))return;
- const el=document.createElement("style");el.id="dutch-auth-style";
- el.textContent=`
- #da-overlay{position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px}
- #da-panel{background:#fff;color:#1b2935;border-radius:14px;padding:20px;max-width:430px;width:100%;max-height:85vh;overflow:auto;font:16px/1.5 system-ui,Arial,sans-serif;box-shadow:0 16px 44px #0004}
- #da-panel h3{margin:0 0 12px;font-size:21px;color:#153249}
- #da-panel label{display:block;margin:9px 0 4px;font-size:14px}
- #da-panel input:not([type=checkbox]),#da-panel select{width:100%;padding:10px;border:1px solid #bdc7cf;border-radius:8px;font:inherit;box-sizing:border-box;background:white;color:#172b3e}
- #da-panel button{padding:9px 12px;background:#145c8c;color:white;border:0;border-radius:8px;margin:7px 7px 0 0;cursor:pointer;font:inherit}
- #da-panel button:disabled{opacity:.55;cursor:default}
- #da-panel button.da-secondary{background:#e8eef2;color:#203747}
- #da-panel .da-note{font-size:13px;color:#5a6671;margin:7px 0}
- #da-panel .da-error{color:#ae2727;font-size:14px;min-height:1.5em}
- #da-panel .da-client{border-top:1px solid #d6dde2;padding:12px 0}
- #da-panel .da-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
- #da-panel .da-grid label{margin:0}
- #da-overlay.da-home{background:linear-gradient(155deg,#eaf5ed,#f8fbff);padding:0;align-items:center;justify-content:center;width:100vw;height:100dvh;overflow-y:auto;box-sizing:border-box}
- #da-overlay.da-home #da-panel{width:100%;max-width:none;min-height:100dvh;max-height:none;padding:max(28px,env(safe-area-inset-top)) 24px max(24px,env(safe-area-inset-bottom));border-radius:0;text-align:left;box-shadow:none;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;align-items:center} #da-overlay.da-home #da-panel #da-body{width:100%;max-width:390px}
- #da-overlay.da-home #da-panel h3{text-align:center;font-size:23px;margin:4px 0 16px}
- #da-overlay.da-home #da-panel .da-logo{display:block;width:clamp(76px,22vw,106px);height:clamp(76px,22vw,106px);object-fit:contain;margin:0 auto 10px;border-radius:20px}
- #da-overlay.da-home #da-panel input{min-height:44px}
- #da-overlay.da-home #da-signin{display:block;width:100%;margin:14px 0 5px;min-height:44px}
- #da-overlay.da-home #da-forgot{background:transparent;color:#145c8c;display:block;margin:0 0 8px auto;padding:4px}
- #da-overlay.da-home #da-signup{background:transparent;color:#145c8c;display:block;margin:0 auto}
- #da-overlay.da-home #da-cancel{display:none}
- #da-account-btn[hidden]{display:none!important}
- #da-account-btn{position:fixed;right:12px;bottom:78px;z-index:1000;background:#195b89;color:white;border:0;border-radius:999px;padding:9px 13px;font:14px system-ui;box-shadow:0 2px 8px #0004;cursor:pointer}
- `;
- document.head.appendChild(el);
+ const el=document.createElement("link");el.id="dutch-auth-style";el.rel="stylesheet";el.href="./styles/auth.css?v=1";document.head.appendChild(el);
 }
 function createPanel(title){
  style();if(dialog)dialog.remove();
