@@ -42,7 +42,7 @@ function createPanel(title){
  dialog=document.createElement("div");dialog.id="da-overlay";
  dialog.innerHTML='<div id="da-panel" role="dialog" aria-modal="true"><h3>'+esc(title)+'</h3><div id="da-body"></div></div>';
  document.body.appendChild(dialog);
- dialog.addEventListener("click",e=>{if(e.target===dialog)close();});
+ dialog.addEventListener("click",e=>{if(e.target===dialog&&!dialog.classList.contains("da-home"))close();});
  return dialog.querySelector("#da-body");
 }
 function updateAccountButton(btn,session){if(!btn)return;btn.hidden=!!session;btn.textContent=session?"账户":"登录";}
