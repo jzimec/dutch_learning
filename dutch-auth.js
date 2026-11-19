@@ -65,18 +65,19 @@ async function ensure(requireAi=true,skipSessionCheck=false){
   try{
    const c=await loadClient();
    const {data:{session}}=await c.auth.getSession();
-   if(session?.access_token)token=session.access_token;
-  }catch(e){}
+   if(session?.access_token){const p=await getProfile();if(p?.status!=="approved")throw Error("账户尚未获得管理员批准");token=session.access_token;}
+  }catch(e){if(/管理员|批准|尚未/.test(e.message))throw e;}
  }
  if(token)return token;
  return new Promise((resolve,reject)=>{
-  const body=createPanel("Dutch Learning");\n  dialog.classList.add("da-home");
+  const body=createPanel("Dutch Learning");
+  dialog.classList.add("da-home");
   body.innerHTML='<img class="da-logo" src="icon-192.png" alt="Dutch Learning 小树苗图标" />'+
    '<label>邮箱</label><input id="da-email" type="email" autocomplete="username" />'+
    '<label>密码</label><input id="da-password" type="password" autocomplete="current-password" />'+
    '<div id="da-status" class="da-error"></div>'+
    '<button id="da-signin">登录</button><button id="da-signup" class="da-secondary">注册新账户</button><button id="da-forgot" class="da-secondary">忘记密码？</button><button id="da-cancel" class="da-secondary">取消</button>'+
-   '<p class="da-note">新账户需要管理员批准才能使用 AI。请勿在此输入 Supabase 密钥或 OpenAI API Key。</p>';
+   '<p class="da-note">新账户需要管理员批准才能使用学习 App。请勿在此输入 Supabase 密钥或 OpenAI API Key。</p>';
   const q=x=>body.querySelector(x);
   q("#da-cancel").onclick=()=>{close();reject(Error("已取消登录"));};
   async function submit(signUp){
@@ -98,6 +99,8 @@ async function ensure(requireAi=true,skipSessionCheck=false){
      if(requireAi)t=await getToken();
      else{
        const {data:{session}}=await c.auth.getSession();
+       const p=await getProfile();
+       if(p?.status!=="approved")throw Error("账户尚未获得管理员批准");
        t=session?.access_token;
      }
      if(!t)throw Error("请完成邮箱验证后再登录");
