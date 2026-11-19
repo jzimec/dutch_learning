@@ -20,3 +20,5 @@ jobs:
         run: node agent/validate.mjs
       - name: Select next queued development task
         run: python3 agent/next_task.py
+      - name: Check agent Python syntax
+        run: python3 -c "import ast, pathlib; [ast.parse(p.read_text(encoding='utf-8'), filename=str(p)) for p in pathlib.Path('agent').glob('*.py')]"
