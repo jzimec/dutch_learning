@@ -14,6 +14,10 @@ jobs:
           python-version: '3.11'
       - name: Validate task and safety configuration
         run: node agent/validate.mjs
+      - name: Check model credential and execution scope
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python3 agent/preflight.py
       - name: Generate supervised patch proposal
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
