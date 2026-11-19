@@ -19,8 +19,10 @@ if not task:
 key = os.environ.get("OPENAI_API_KEY")
 if not key:
     raise SystemExit("OPENAI_API_KEY missing: no model request performed")
+if task["id"] != "AUTH-01":
+    raise SystemExit(f"Task {task['id']} requires additional scoped sources; refusing unrelated changes")
 # Never send repository secrets or oversized files to a model.
-candidates = ["dutch-auth.js", "agent/rules.md"]
+candidates = ["dutch-auth.js"]
 sources = {}
 for name in candidates:
     if any(fnmatch.fnmatch(name,p) for p in cfg["protected_paths"]):
@@ -44,7 +46,7 @@ payload = {
     "model": (os.environ.get("AGENT_MODEL") or "gpt-4.1-mini"),
     "instructions": "You are a supervised code assistant. Return ONLY a JSON object with path and content. Make the smallest safe change addressing the task. Never change security policies or credentials. If the task cannot be completed safely with supplied files, return {\"path\":\"\",\"content\":\"\"}.",
     "input": json.dumps(prompt,ensure_ascii=False),
-    "max_output_tokens": 6000,
+    "max_output_tokens": 12000,
 }
 req = urllib.request.Request(
     "https://api.openai.com/v1/responses",
@@ -57,6 +59,8 @@ try:
         answer=json.load(response)
 except urllib.error.HTTPError as exc:
     raise SystemExit(f"Model request failed with HTTP {exc.code}") from None
+except (urllib.error.URLError, TimeoutError) as exc:
+    raise SystemExit(f"Model connection failed: {type(exc).__name__}") from None
 output="".join(part.get("text","") for item in answer.get("output",[]) if item.get("type")=="message" for part in item.get("content",[]) if part.get("type")=="output_text")
 try:
     proposal=json.loads(output)
