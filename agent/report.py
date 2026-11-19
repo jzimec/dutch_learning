@@ -20,6 +20,12 @@ for task in sorted(queue["tasks"], key=lambda t: (t["priority"], t["id"])):
     lines.append(f"- {task['id']} | {task['status']} | {task['title']}")
     if task.get("blocked_by"):
         lines.append(f"  - Blocker: {task['blocked_by']}")
+journal_path = root / "agent/history.json"
+if journal_path.exists():
+    records = json.loads(journal_path.read_text(encoding="utf-8"))
+    lines.extend(["", "## Recent execution history", ""])
+    for record in records[-5:]:
+        lines.append(f"- {record['timestamp']} | {record['task_id']} | {record['result']} | {record.get('commit', '')}")
 lines.extend([
     "",
     "## Summary",
