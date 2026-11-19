@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import urllib.request
 import urllib.error
+import ast
 
 ROOT = Path(__file__).resolve().parent.parent
 cfg = json.loads((ROOT / "agent/runner-config.json").read_text())
@@ -30,6 +31,8 @@ for name in candidates:
         sources[name] = p.read_text(encoding="utf-8")
 if not sources:
     raise SystemExit("No safe readable source files")
+if cfg["mode"] != "supervised" or cfg["auto_push"] or cfg["auto_merge"]:
+    raise SystemExit("Unsafe runner configuration")
 prompt = {
     "task": task,
     "rules": (ROOT/"agent/rules.md").read_text(encoding="utf-8"),
@@ -64,6 +67,16 @@ if name not in sources or not isinstance(new,str) or not new or new==sources[nam
     raise SystemExit("No safe applicable change proposed")
 if len(new)>60000:
     raise SystemExit("Proposed file exceeds size limit")
+if name.endswith(".py"):
+    try:
+        ast.parse(new)
+    except SyntaxError as exc:
+        raise SystemExit(f"Proposed Python syntax invalid: {exc}") from None
+if name.endswith(".js"):
+    import subprocess
+    result=subprocess.run(["node","--check","--input-type=commonjs"],input=new,text=True,capture_output=True)
+    if result.returncode:
+        raise SystemExit("Proposed JavaScript syntax invalid: "+result.stderr[:500])
 patch="".join(difflib.unified_diff(sources[name].splitlines(True),new.splitlines(True),fromfile="a/"+name,tofile="b/"+name))
 if not patch:
     raise SystemExit("Empty patch")
