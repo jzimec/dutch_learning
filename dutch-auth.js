@@ -18,7 +18,7 @@ function createPanel(title){
  dialog.addEventListener("click",e=>{if(e.target===dialog&&!dialog.classList.contains("da-home"))close();});
  return dialog.querySelector("#da-body");
 }
-function updateAccountButton(btn,session){if(!btn)return;btn.hidden=!!session;btn.textContent=session?"账户":"登录";}
+function updateAccountButton(btn,session){if(!btn)return;btn.hidden=false;btn.textContent=session?"账户":"登录";}
 function close(){if(dialog){dialog.remove();dialog=null;}}
 function message(s){const e=dialog?.querySelector("#da-status");if(e)e.textContent=s;}
 function loadClient(){
@@ -253,7 +253,15 @@ function boot(){
    if(error||!session?.user){
      updateAccountButton(btn,null);
      if(!dialog)ensure(false,true).catch(()=>{});
-   }else {updateAccountButton(btn,session);if(!dialog)ensure(false,true).catch(()=>{});}
+   }else {
+     getProfile().then(p=>{
+       if(p?.status!=="approved")throw Error("账户尚未获得管理员批准");
+       updateAccountButton(btn,session);
+     }).catch(()=>{
+       updateAccountButton(btn,null);
+       if(!dialog)ensure(false,true).catch(()=>{});
+     });
+   }
  }).catch(()=>{
    if(recovering||recoverySeen){
      const body=createPanel("Dutch Learning · 重置链接无法验证");
