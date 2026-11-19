@@ -1,0 +1,34 @@
+name: Dutch Learning agent scheduled supervisor
+on:
+  schedule:
+    - cron: '0 6 * * 1-5'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: dutch-learning-agent-supervisor
+  cancel-in-progress: false
+jobs:
+  supervise:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate queue, safety and source syntax
+        run: node agent/validate.mjs
+      - name: Run unit tests
+        run: python3 -m unittest discover -s agent -p 'test_*.py' -v
+      - name: Identify next task
+        run: python3 agent/next_task.py
+      - name: Write progress report
+        run: python3 agent/report.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-supervisor-report
+          path: agent-supervisor-report.md
+          retention-days: 14
