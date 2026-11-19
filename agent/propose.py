@@ -44,11 +44,14 @@ prompt = {
     "sources": sources,
     "output_format": {"path": "one existing allowed path", "content": "complete replacement UTF-8 file content"},
 }
+serialized_prompt = json.dumps(prompt, ensure_ascii=False)
+if len(serialized_prompt) > cfg["max_input_chars"]:
+    raise SystemExit("Prompt exceeds configured input limit")
 payload = {
-    "model": (os.environ.get("AGENT_MODEL") or "gpt-4.1-mini"),
+    "model": (os.environ.get("AGENT_MODEL") or cfg["model"]),
     "instructions": "You are a supervised code assistant. Return ONLY a JSON object with path and content. Make the smallest safe change addressing the task. Never change security policies or credentials. If the task cannot be completed safely with supplied files, return {\"path\":\"\",\"content\":\"\"}.",
-    "input": json.dumps(prompt,ensure_ascii=False),
-    "max_output_tokens": 12000,
+    "input": serialized_prompt,
+    "max_output_tokens": cfg["max_output_tokens"],
 }
 if fixture_path:
     # Offline test fixture only. Do not permit fixture mode in GitHub Actions.
