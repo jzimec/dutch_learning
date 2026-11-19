@@ -1,0 +1,46 @@
+name: Dutch Learning agent status
+on:
+  schedule:
+    - cron: '15 7 * * 1,4'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate task report
+        id: report
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from collections import Counter
+          from datetime import datetime, timezone
+          with open('agent/tasks.json',encoding='utf-8') as f: d=json.load(f)
+          counts=Counter(t['status'] for t in d['tasks'])
+          lines=['# Dutch Learning agent status', '', 'Updated: '+datetime.now(timezone.utc).isoformat(), '', '## Task counts', '']
+          lines += [f'- {k}: {v}' for k,v in sorted(counts.items())]
+          lines += ['', '## Tasks', '']
+          lines += [f"- **{t['id']}** [{t['status']}]: {t['title']}"+(f" — blocked: {t['blocked_by']}" if t.get('blocked_by') else '') for t in d['tasks']]
+          lines += ['', '> This workflow reports task status only. Autonomous coding is NOT enabled until an authenticated coding runner and tests are installed.', '']
+          report='\n'.join(lines)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:f.write(report)
+          with open('agent-report.md','w',encoding='utf-8') as f:f.write(report)
+          print(report)
+          PY
+      - name: Update tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          title="Dutch Learning | Agent status"
+          number=$(gh issue list --state open --search "$title in:title" --json number,title --jq '.[] | select(.title == "Dutch Learning | Agent status") | .number' | head -1)
+          if [ -z "$number" ]; then
+            gh issue create --title "$title" --body-file agent-report.md
+          else
+            gh issue edit "$number" --body-file agent-report.md
+          fi
