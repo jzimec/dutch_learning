@@ -5,6 +5,7 @@ import fnmatch
 import json
 import os
 from pathlib import Path
+from validate_proposal import validate_proposal
 import urllib.request
 import urllib.error
 import ast
@@ -77,6 +78,10 @@ if name.endswith(".js"):
     result=subprocess.run(["node","--check","--input-type=commonjs"],input=new,text=True,capture_output=True)
     if result.returncode:
         raise SystemExit("Proposed JavaScript syntax invalid: "+result.stderr[:500])
+try:
+    name, new = validate_proposal(proposal, sources, cfg)
+except (ValueError, SyntaxError) as exc:
+    raise SystemExit(f"Unsafe proposal rejected: {exc}") from None
 patch="".join(difflib.unified_diff(sources[name].splitlines(True),new.splitlines(True),fromfile="a/"+name,tofile="b/"+name))
 if not patch:
     raise SystemExit("Empty patch")
