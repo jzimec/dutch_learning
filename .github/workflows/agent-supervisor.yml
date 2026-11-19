@@ -26,6 +26,10 @@ jobs:
         run: python3 agent/next_task.py
       - name: Write progress report
         run: python3 agent/report.py
+      - name: Persist report in GitHub issue history
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash agent/publish-report.sh
       - name: Upload report
         uses: actions/upload-artifact@v4
         with:
