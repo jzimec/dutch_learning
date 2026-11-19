@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "mode": "supervised",
+  "model": "gpt-5.1-codex-mini",
+  "max_tasks_per_run": 1,
+  "max_runtime_minutes": 30,
+  "max_agent_turns": 12,
+  "max_budget_usd": 1.0,
+  "allowed_paths": [
+    "dutch-auth.js",
+    "styles/**",
+    "agent/**",
+    "tests/**"
+  ],
+  "protected_paths": [
+    "index.html",
+    ".github/workflows/**",
+    "supabase/**"
+  ],
+  "auto_push": false,
+  "auto_merge": false,
+  "requires_human_review": [
+    "production deploy",
+    "database migration",
+    "authentication policy changes",
+    "credential changes",
+    "protected path edits"
+  ]
+}
