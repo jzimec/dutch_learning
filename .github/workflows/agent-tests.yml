@@ -22,3 +22,5 @@ jobs:
         run: python3 agent/next_task.py
       - name: Check agent Python syntax
         run: python3 -c "import ast, pathlib; [ast.parse(p.read_text(encoding='utf-8'), filename=str(p)) for p in pathlib.Path('agent').glob('*.py')]"
+      - name: Run AI proposal validator unit tests
+        run: python3 -m unittest discover -s agent -p 'test_*.py' -v
