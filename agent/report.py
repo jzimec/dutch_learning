@@ -7,6 +7,15 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
 queue = json.loads((root / "agent/tasks.json").read_text(encoding="utf-8"))
+snapshot = root / "agent/runtime-state.json"
+if snapshot.exists():
+    state = json.loads(snapshot.read_text(encoding="utf-8"))
+    for task in queue["tasks"]:
+        saved = state.get("tasks", {}).get(task["id"])
+        if saved:
+            task["status"] = saved["status"]
+            if saved.get("evidence"):
+                task["evidence"] = saved["evidence"]
 counts = Counter(t["status"] for t in queue["tasks"])
 lines = [
     "# Dutch Learning agent supervisor",
