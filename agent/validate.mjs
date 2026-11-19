@@ -14,4 +14,13 @@ for(const t of tasks.tasks){
 for(const path of ['dutch-auth.js']){
  execFileSync('node',['--check',path],{stdio:'inherit'});
 }
-console.log('Agent task schema and auth JavaScript syntax: PASS');
+const config=JSON.parse(fs.readFileSync('agent/runner-config.json','utf8'));
+assert.equal(config.auto_merge,false);
+assert.equal(config.auto_push,false);
+assert.equal(config.mode,'supervised');
+assert.ok(config.max_tasks_per_run>=1 && config.max_tasks_per_run<=3);
+assert.ok(config.max_runtime_minutes>=1 && config.max_runtime_minutes<=60);
+assert.ok(config.max_budget_usd>0 && config.max_budget_usd<=10);
+assert.ok(config.protected_paths.includes('index.html'));
+assert.ok(config.protected_paths.includes('.github/workflows/**'));
+console.log('Agent queue, safety configuration and auth syntax: PASS');
