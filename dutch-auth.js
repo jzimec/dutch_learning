@@ -165,7 +165,7 @@ async function showPasswordRecovery(){
    if(error)throw error;
    // Remove recovery credentials from the browser address after the reset.
    if(window.location.hash.includes("access_token=")||window.location.hash.includes("type=recovery")||new URLSearchParams(location.search).get("auth")==="recovery"){
-     history.replaceState(null,"",window.location.pathname+window.location.search);
+     history.replaceState(null,"",window.location.pathname);
    }
    // Recovery tokens are temporary: require a fresh password login afterward.
    await c.auth.signOut();
