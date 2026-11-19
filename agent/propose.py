@@ -17,8 +17,9 @@ tasks = json.loads((ROOT / "agent/tasks.json").read_text())["tasks"]
 task = next((t for t in sorted(tasks,key=lambda t:t["priority"]) if t["status"] in ("todo","in_progress")),None)
 if not task:
     raise SystemExit("No runnable tasks")
+fixture_path = os.environ.get("AGENT_RESPONSE_FIXTURE")
 key = os.environ.get("OPENAI_API_KEY")
-if not key:
+if not key and not fixture_path:
     raise SystemExit("OPENAI_API_KEY missing: no model request performed")
 if task["id"] != "AUTH-01":
     raise SystemExit(f"Task {task['id']} requires additional scoped sources; refusing unrelated changes")
@@ -49,19 +50,28 @@ payload = {
     "input": json.dumps(prompt,ensure_ascii=False),
     "max_output_tokens": 12000,
 }
-req = urllib.request.Request(
-    "https://api.openai.com/v1/responses",
-    data=json.dumps(payload).encode("utf-8"),
-    headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"},
-    method="POST",
-)
-try:
-    with urllib.request.urlopen(req,timeout=120) as response:
-        answer=json.load(response)
-except urllib.error.HTTPError as exc:
-    raise SystemExit(f"Model request failed with HTTP {exc.code}") from None
-except (urllib.error.URLError, TimeoutError) as exc:
-    raise SystemExit(f"Model connection failed: {type(exc).__name__}") from None
+if fixture_path:
+    # Offline test fixture only. Do not permit fixture mode in GitHub Actions.
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        raise SystemExit("Fixture mode forbidden in GitHub Actions")
+    fixture = Path(fixture_path).resolve()
+    if not fixture.is_file():
+        raise SystemExit("Fixture file not found")
+    answer = json.loads(fixture.read_text(encoding="utf-8"))
+else:
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization":f"Bearer {key}","Content-Type":"application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req,timeout=120) as response:
+            answer=json.load(response)
+    except urllib.error.HTTPError as exc:
+        raise SystemExit(f"Model request failed with HTTP {exc.code}") from None
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise SystemExit(f"Model connection failed: {type(exc).__name__}") from None
 try:
     proposal = extract_proposal(answer)
 except ValueError as exc:
