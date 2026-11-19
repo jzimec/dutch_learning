@@ -18,3 +18,5 @@ jobs:
           node-version: '22'
       - name: Validate task queue and auth syntax
         run: node agent/validate.mjs
+      - name: Select next queued development task
+        run: python3 agent/next_task.py
