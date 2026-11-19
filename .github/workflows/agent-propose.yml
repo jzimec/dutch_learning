@@ -1,0 +1,28 @@
+name: Dutch Learning supervised AI proposal
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate task and safety configuration
+        run: node agent/validate.mjs
+      - name: Generate supervised patch proposal
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AGENT_MODEL: ${{ vars.AGENT_MODEL }}
+        run: python3 agent/propose.py
+      - name: Upload patch for human review
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dutch-learning-proposal
+          path: agent-proposal.patch
+          retention-days: 7
