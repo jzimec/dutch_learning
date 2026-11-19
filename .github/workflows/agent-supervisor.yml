@@ -22,6 +22,10 @@ jobs:
         run: node agent/validate.mjs
       - name: Run unit tests
         run: python3 -m unittest discover -s agent -p 'test_*.py' -v
+      - name: Restore persistent task state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 agent/load-state.py
       - name: Identify next task
         run: python3 agent/next_task.py
       - name: Write progress report
