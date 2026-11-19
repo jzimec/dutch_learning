@@ -106,8 +106,12 @@ async function ensure(requireAi=true,skipSessionCheck=false){
      }
      if(!t)throw Error("请完成邮箱验证后再登录");
      close();syncButton();resolve(t);
-   }catch(e){message(e.message||"登录失败");}
-   finally{if(dialog){q("#da-signin").disabled=q("#da-signup").disabled=false;}}
+   }catch(e){
+     // An authenticated but unapproved user must not retain an active session.
+     if(!signUp){try{const c=await loadClient();await c.auth.signOut();}catch{}}
+     message(e.message||"登录失败");
+   }
+   finally{if(dialog===body.parentElement?.parentElement){q("#da-signin").disabled=q("#da-signup").disabled=false;}}
   }
   q("#da-forgot").onclick=()=>forgotPassword(q("#da-email").value.trim());
   q("#da-signin").onclick=()=>submit(false);
@@ -163,6 +167,8 @@ async function showPasswordRecovery(){
    if(window.location.hash.includes("access_token=")||window.location.hash.includes("type=recovery")||new URLSearchParams(location.search).get("auth")==="recovery"){
      history.replaceState(null,"",window.location.pathname+window.location.search);
    }
+   // Recovery tokens are temporary: require a fresh password login afterward.
+   await c.auth.signOut();
    message("密码已重置成功。现在可以使用新密码登录。");
    btn.textContent="完成";
    btn.disabled=false;btn.onclick=()=>{close();account();};
