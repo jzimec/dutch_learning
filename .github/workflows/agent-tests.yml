@@ -26,3 +26,5 @@ jobs:
         run: python3 -m unittest discover -s agent -p 'test_*.py' -v
       - name: Verify supervisor report generation
         run: python3 agent/report.py && test -s agent-supervisor-report.md
+      - name: Check report publishing script syntax
+        run: bash -n agent/publish-report.sh
