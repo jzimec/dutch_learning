@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 from validate_proposal import validate_proposal
+from response_parser import extract_proposal
 import urllib.request
 import urllib.error
 import ast
@@ -61,11 +62,10 @@ except urllib.error.HTTPError as exc:
     raise SystemExit(f"Model request failed with HTTP {exc.code}") from None
 except (urllib.error.URLError, TimeoutError) as exc:
     raise SystemExit(f"Model connection failed: {type(exc).__name__}") from None
-output="".join(part.get("text","") for item in answer.get("output",[]) if item.get("type")=="message" for part in item.get("content",[]) if part.get("type")=="output_text")
 try:
-    proposal=json.loads(output)
-except json.JSONDecodeError:
-    raise SystemExit("Model output is not valid JSON") from None
+    proposal = extract_proposal(answer)
+except ValueError as exc:
+    raise SystemExit(f"Invalid model response: {exc}") from None
 name=proposal.get("path","")
 new=proposal.get("content","")
 if name not in sources or not isinstance(new,str) or not new or new==sources[name]:
