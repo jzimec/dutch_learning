@@ -76,10 +76,10 @@ async function ensure(requireAi=true,skipSessionCheck=false){
    '<label>邮箱</label><input id="da-email" type="email" autocomplete="username" />'+
    '<label>密码</label><input id="da-password" type="password" autocomplete="current-password" />'+
    '<div id="da-status" class="da-error"></div>'+
-   '<button id="da-signin">登录</button><button id="da-signup" class="da-secondary">注册新账户</button><button id="da-forgot" class="da-secondary">忘记密码？</button><button id="da-cancel" class="da-secondary">取消</button>'+
+   '<button id="da-signin">登录</button><button id="da-signup" class="da-secondary">注册新账户</button><button id="da-forgot" class="da-secondary">忘记密码？</button>'+
    '<p class="da-note">新账户需要管理员批准才能使用学习 App。请勿在此输入 Supabase 密钥或 OpenAI API Key。</p>';
   const q=x=>body.querySelector(x);
-  q("#da-cancel").onclick=()=>{close();reject(Error("已取消登录"));};
+  // The full-screen login gate cannot be dismissed before authorization.
   async function submit(signUp){
    const email=q("#da-email").value.trim(),password=q("#da-password").value;
    if(!email||!password){message("请输入邮箱和密码");return;}
@@ -90,7 +90,8 @@ async function ensure(requireAi=true,skipSessionCheck=false){
      if(signUp){
        const {data,error}=await c.auth.signUp({email,password});
        if(error)throw error;
-       message(data.session?"注册成功，但需要管理员批准":"注册成功。请确认邮箱，然后等待管理员审批。");
+       if(data.session)await c.auth.signOut();
+       message(data.session?"注册成功，请等待管理员批准后再登录。":"注册成功。请确认邮箱，然后等待管理员审批。");
        return;
      }
      const {error}=await c.auth.signInWithPassword({email,password});
