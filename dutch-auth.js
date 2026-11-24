@@ -4,7 +4,7 @@
 const URL="https://uxzyswpxwqcjvgkjlwhv.supabase.co";
 const KEY="sb_publishable_XYuHAixMGkRaFj6-bt3mXg_GGov9jUl";
 const KINDS=[["learn","Learn"],["quiz","Quiz"],["dialogue","Dialogue"],["grammar","Grammar"],["progress","Progress"],["categories","Categories"],["ai","AI Dialogue"]];
-let client=null,loading=null,dialog=null,profile=null,recoverySeen=false;
+let client=null,loading=null,dialog=null,profile=null,recoverySeen=false,currentUserId=null;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function style(){
  if(document.getElementById("dutch-auth-style"))return;
@@ -56,7 +56,7 @@ function loadClient(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
       client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:false,detectSessionInUrl:true}});
-      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;const btn=document.getElementById("da-account-btn");updateAccountButton(btn,session);if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
+      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;currentUserId=session?.user?.id||null;window.dispatchEvent(new Event('dutch-auth-change'));const btn=document.getElementById("da-account-btn");updateAccountButton(btn,session);if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
       resolve(client);
     }catch(e){reject(e);}
    }
@@ -97,7 +97,8 @@ async function ensure(requireAi=true,skipSessionCheck=false){
  }
  if(token)return token;
  return new Promise((resolve,reject)=>{
-  const body=createPanel("Dutch Learning");\n  dialog.classList.add("da-home");
+  const body=createPanel("Dutch Learning");
+  dialog.classList.add("da-home");
   body.innerHTML='<img class="da-logo" src="icon-192.png" alt="Dutch Learning 小树苗图标" />'+
    '<label>邮箱</label><input id="da-email" type="email" autocomplete="username" />'+
    '<label>密码</label><input id="da-password" type="password" autocomplete="current-password" />'+
@@ -289,6 +290,9 @@ function boot(){
    }
  });
 }
-window.dutchAuth={ensure,getToken,account};
+window.dutchAuth={ensure,getToken,account,currentUserId:()=>currentUserId};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
 })();
+
+// Word-only extension: preserve the existing learning page and other modules.
+(function(){if(document.querySelector('script[data-word-tools]'))return;const s=document.createElement('script');s.src='./word-tools.js?v=1';s.defer=true;s.dataset.wordTools='1';document.head.appendChild(s);})();
