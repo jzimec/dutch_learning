@@ -2,14 +2,16 @@
    Local to this browser. Does not alter quiz progress or other modules. */
 (function () {
   'use strict';
+  const userId = () => window.dutchAuth?.currentUserId?.() || null;
   const POS_KEY = 'dutchWordBookmarkV1';
   const NOTE_KEY = 'dutchWordNotebookV1';
+  const scoped = key => userId() ? key + ':' + userId() : null;
   const read = (key, fallback) => {
-    try { const data = JSON.parse(localStorage.getItem(key)); return data ?? fallback; }
+    try { if (!userId()) return fallback; const data = JSON.parse(localStorage.getItem(scoped(key))); return data ?? fallback; }
     catch { return fallback; }
   };
   const write = (key, value) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+    try { if (!userId()) { alert('请先登录后使用书签和笔记本。'); return false; } localStorage.setItem(scoped(key), JSON.stringify(value)); return true; }
     catch { alert('无法保存：请检查浏览器存储空间。'); return false; }
   };
   const lesson = () => typeof current === 'function' ? current() : null;
@@ -35,24 +37,27 @@
   };
   function closePanel() { document.getElementById('word-notebook-panel')?.remove(); }
   function refresh() {
-    const currentPos = position();
+    const currentPos = userId() ? position() : null;
     const saved = read(POS_KEY, null);
     const items = notebook();
     const noteBtn = document.getElementById('word-note-add');
     const markBtn = document.getElementById('word-bookmark-save');
     const resumeBtn = document.getElementById('word-bookmark-resume');
     if (noteBtn) {
+      noteBtn.disabled = !userId();
       const exists = currentPos && items.some(x => x.cat === currentPos.cat && x.nl === currentPos.nl);
       noteBtn.textContent = exists ? '✓ 已加入笔记本' : '＋ 加入笔记本';
       noteBtn.setAttribute('aria-pressed', String(!!exists));
     }
+    if (markBtn) markBtn.disabled = !userId();
     if (markBtn) markBtn.textContent = saved && currentPos && saved.cat === currentPos.cat && saved.nl === currentPos.nl ? '🔖 已标记' : '🔖 书签';
-    if (resumeBtn) { resumeBtn.disabled = !saved || match(saved) < 0; resumeBtn.title = saved ? '返回：' + saved.nl : '还没有书签'; }
+    if (resumeBtn) { resumeBtn.disabled = !userId() || !saved || match(saved) < 0; resumeBtn.title = saved ? '返回：' + saved.nl : '还没有书签'; }
     const count = document.getElementById('word-notebook-count');
     if (count) count.textContent = String(items.length);
   }
   function showNotebook() {
     closePanel();
+    if (!userId()) { alert('请先登录后查看笔记本。'); return; }
     const panel = document.createElement('div');
     panel.id = 'word-notebook-panel';
     panel.className = 'word-tools-overlay';
@@ -100,6 +105,7 @@
     controls.querySelector('#word-notebook-open').onclick = showNotebook;
     const word = document.getElementById('nlWord');
     if (word) new MutationObserver(refresh).observe(word, {childList:true, characterData:true, subtree:true});
+    window.addEventListener('dutch-auth-change', () => { closePanel(); refresh(); });
     refresh();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
