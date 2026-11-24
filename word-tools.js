@@ -17,9 +17,8 @@
   const lesson = () => typeof current === 'function' ? current() : null;
   const position = () => {
     const l = lesson();
-    const selected = document.querySelector('.category.selected');
-    const cat = selected && selected.dataset.cat;
-    return l && cat ? {cat, nl: l.nl} : null;
+    const cat = typeof category !== 'undefined' ? category : null;
+    return l && cat && Array.isArray(lessonsData[cat]) ? {cat, nl: l.nl} : null;
   };
   const notebook = () => {
     const data = read(NOTE_KEY, []);
@@ -54,6 +53,26 @@
     if (resumeBtn) { resumeBtn.disabled = !userId() || !saved || match(saved) < 0; resumeBtn.title = saved ? '点击直接跳转：' + saved.nl : '还没有书签'; }
     const count = document.getElementById('word-notebook-count');
     if (count) count.textContent = String(items.length);
+    refreshHomeBookmark();
+  }
+  function refreshHomeBookmark() {
+    const grid = document.querySelector('#specialView .category-grid');
+    if (!grid || document.querySelector('#specialView.hidden')) return;
+    const saved = read(POS_KEY, null);
+    let button = document.getElementById('word-home-bookmark');
+    if (!saved || match(saved) < 0) {
+      if (button) button.remove();
+      return;
+    }
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.id = 'word-home-bookmark';
+      button.className = 'category-card word-home-bookmark';
+      grid.insertBefore(button, grid.firstChild);
+    }
+    button.textContent = '🔖 继续上次：' + saved.nl + ' · 点击直接跳转';
+    button.onclick = () => jump(read(POS_KEY, null));
   }
   function showNotebook() {
     closePanel();
@@ -105,7 +124,10 @@
     controls.querySelector('#word-notebook-open').onclick = showNotebook;
     const word = document.getElementById('nlWord');
     if (word) new MutationObserver(refresh).observe(word, {childList:true, characterData:true, subtree:true});
+    const special = document.getElementById('specialView');
+    if (special) new MutationObserver(() => refreshHomeBookmark()).observe(special, {childList:true});
     window.addEventListener('dutch-auth-change', () => { closePanel(); refresh(); });
+    window.addEventListener('pageshow', refresh);
     refresh();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, {once:true});
