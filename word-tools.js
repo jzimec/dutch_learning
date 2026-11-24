@@ -80,7 +80,9 @@
       list.appendChild(row);
     });
   }
+  function installStyle(){if(document.getElementById('word-tools-style'))return;const style=document.createElement('style');style.id='word-tools-style';style.textContent=".word-tools-controls{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;margin:0 0 6px}.word-tools-controls button{font:inherit;font-size:12px;border:1px solid #9bb5db;background:#fff;border-radius:8px;padding:5px 7px;cursor:pointer;color:#16406f}.word-tools-controls button:disabled{opacity:.45}.word-tools-overlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;padding:12px}.word-tools-dialog{background:#fff;color:#192536;border-radius:14px;width:min(520px,100%);max-height:85vh;overflow:auto;padding:16px}.word-tools-dialog header{display:flex;justify-content:space-between;align-items:center}.word-tools-dialog header button{font-size:25px;border:0;background:transparent}.word-tools-hint{font-size:12px;color:#536273}.word-tools-entry{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid #e5e8ee;padding:8px 0}.word-tools-open{flex:1;text-align:left;border:0;background:transparent;color:#174d85}@media(max-width:600px){.word-tools-controls{justify-content:center}.word-tools-controls button{font-size:11px;padding:4px 6px}}";document.head.appendChild(style);}
   function init() {
+    installStyle();
     const card = document.querySelector('.word-card');
     if (!card || document.getElementById('word-note-add')) return;
     const controls = document.createElement('div');
