@@ -50,8 +50,8 @@
       noteBtn.setAttribute('aria-pressed', String(!!exists));
     }
     if (markBtn) markBtn.disabled = !userId();
-    if (markBtn) markBtn.textContent = saved && currentPos && saved.cat === currentPos.cat && saved.nl === currentPos.nl ? '🔖 已标记' : '🔖 书签';
-    if (resumeBtn) { resumeBtn.disabled = !userId() || !saved || match(saved) < 0; resumeBtn.title = saved ? '返回：' + saved.nl : '还没有书签'; }
+    if (markBtn) markBtn.textContent = saved && currentPos && saved.cat === currentPos.cat && saved.nl === currentPos.nl ? '✓ 已设为书签' : '设为书签';
+    if (resumeBtn) { resumeBtn.disabled = !userId() || !saved || match(saved) < 0; resumeBtn.title = saved ? '点击直接跳转：' + saved.nl : '还没有书签'; }
     const count = document.getElementById('word-notebook-count');
     if (count) count.textContent = String(items.length);
   }
@@ -92,7 +92,7 @@
     if (!card || document.getElementById('word-note-add')) return;
     const controls = document.createElement('div');
     controls.className = 'word-tools-controls';
-    controls.innerHTML = '<button type="button" id="word-bookmark-save" title="记住当前看到的单词">🔖 书签</button><button type="button" id="word-bookmark-resume" title="跳转到上次标记的单词">继续上次</button><button type="button" id="word-note-add">＋ 加入笔记本</button><button type="button" id="word-notebook-open">📒 笔记本 <span id="word-notebook-count">0</span></button>';
+    controls.innerHTML = '<button type="button" id="word-bookmark-save" title="把当前单词设为书签">设为书签</button><button type="button" id="word-bookmark-resume" title="点击直接跳到书签单词">🔖 跳到书签</button><button type="button" id="word-note-add">＋ 加入笔记本</button><button type="button" id="word-notebook-open">📒 笔记本 <span id="word-notebook-count">0</span></button>';
     card.insertBefore(controls, card.querySelector('.split-2'));
     controls.querySelector('#word-bookmark-save').onclick = () => { const p = position(); if (p && write(POS_KEY, p)) refresh(); };
     controls.querySelector('#word-bookmark-resume').onclick = () => { const p = read(POS_KEY, null); if (p) jump(p); };
