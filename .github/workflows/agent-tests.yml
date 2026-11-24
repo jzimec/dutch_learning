@@ -28,3 +28,7 @@ jobs:
         run: python3 agent/report.py && test -s agent-supervisor-report.md
       - name: Check report publishing script syntax
         run: bash -n agent/publish-report.sh
+      - name: Check Word bookmark and notebook syntax
+        run: node --check word-tools.js
+      - name: Verify Word extension is loaded
+        run: grep -q 'word-tools.js?v=1' dutch-auth.js
