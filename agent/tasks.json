@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "project": "Dutch Learning",
+  "policy": {
+    "branch": "refactor/modular-login-20261117",
+    "production_branch": "main",
+    "auto_merge": false,
+    "max_retries": 2
+  },
+  "tasks": [
+    {
+      "id": "AUTH-01",
+      "title": "Test login, registration, password reset and admin approval",
+      "priority": 1,
+      "status": "todo",
+      "acceptance": [
+        "Automated authentication checks pass",
+        "Unapproved users cannot access protected features",
+        "Logout requires fresh login"
+      ]
+    },
+    {
+      "id": "DATA-01",
+      "title": "Isolate Quiz and Progress data by authenticated user",
+      "priority": 2,
+      "status": "blocked",
+      "blocked_by": "Inspect oversized index.html and verify Supabase learning_progress schema",
+      "acceptance": [
+        "User A cannot read or overwrite User B progress",
+        "Progress persists across devices",
+        "No regression to existing learning modules"
+      ]
+    },
+    {
+      "id": "UI-01",
+      "title": "Validate full-screen mobile login homepage",
+      "priority": 3,
+      "status": "todo",
+      "acceptance": [
+        "Homepage covers viewport",
+        "Sapling logo and controls visible on mobile"
+      ]
+    },
+    {
+      "id": "ARCH-01",
+      "title": "Modularize oversized index.html without changing behavior",
+      "priority": 4,
+      "status": "todo",
+      "acceptance": [
+        "Baseline and refactored app pass same tests",
+        "No unrequested layout changes"
+      ]
+    }
+  ]
+}

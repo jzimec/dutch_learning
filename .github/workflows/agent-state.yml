@@ -1,0 +1,41 @@
+name: Dutch Learning task state update
+on:
+  workflow_dispatch:
+    inputs:
+      task_id:
+        description: 'Existing task ID, e.g. AUTH-01'
+        required: true
+        type: string
+      status:
+        description: 'New state'
+        required: true
+        type: choice
+        options:
+          - in_progress
+          - blocked
+          - unverified
+          - done
+          - todo
+      evidence:
+        description: 'Required for done; link to test run or reviewed commit'
+        required: false
+        type: string
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: dutch-learning-agent-state
+  cancel-in-progress: false
+jobs:
+  save:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update validated task state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TASK_ID: ${{ inputs.task_id }}
+          TASK_STATUS: ${{ inputs.status }}
+          TASK_EVIDENCE: ${{ inputs.evidence }}
+        run: python3 agent/save-state.py --task "$TASK_ID" --status "$TASK_STATUS" --evidence "$TASK_EVIDENCE"

@@ -1,0 +1,34 @@
+name: Dutch Learning agent checks
+on:
+  push:
+    branches:
+      - refactor/modular-login-20261117
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate task queue and auth syntax
+        run: node agent/validate.mjs
+      - name: Select next queued development task
+        run: python3 agent/next_task.py
+      - name: Check agent Python syntax
+        run: python3 -c "import ast, pathlib; [ast.parse(p.read_text(encoding='utf-8'), filename=str(p)) for p in pathlib.Path('agent').glob('*.py')]"
+      - name: Run AI proposal validator unit tests
+        run: python3 -m unittest discover -s agent -p 'test_*.py' -v
+      - name: Verify supervisor report generation
+        run: python3 agent/report.py && test -s agent-supervisor-report.md
+      - name: Check report publishing script syntax
+        run: bash -n agent/publish-report.sh
+      - name: Check Word bookmark and notebook syntax
+        run: node --check word-tools.js
+      - name: Verify Word extension is loaded
+        run: grep -q 'word-tools.js?v=1' dutch-auth.js
