@@ -283,3 +283,6 @@ function boot(){
 window.dutchAuth={ensure,getToken,account};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
 })();
+
+// Word-only extension loader: keep the oversized index.html unchanged.
+(function(){if(document.querySelector('script[data-word-tools]'))return;const s=document.createElement('script');s.src='./word-tools.js?v=1';s.defer=true;s.dataset.wordTools='1';document.head.appendChild(s);})();
