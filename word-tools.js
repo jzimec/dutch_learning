@@ -108,7 +108,22 @@
   function init() {
     installStyle();
     const card = document.querySelector('.word-card');
-    if (!card || document.getElementById('word-note-add')) return;
+    if (!card) return;
+    const existingControls = document.querySelector('.word-tools-controls');
+    const existingStory = document.querySelector('#learningView .story-card');
+    if (existingControls && existingStory && existingStory.parentElement) {
+      let existingCard = existingControls.closest('.word-tools-card');
+      if (!existingCard) {
+        existingCard = document.createElement('section');
+        existingCard.className = 'card word-tools-card';
+        const heading = document.createElement('div');
+        heading.className = 'label blue';
+        heading.textContent = 'Bookmark & Notebook';
+        existingCard.append(heading, existingControls);
+      }
+      existingStory.insertAdjacentElement('afterend', existingCard);
+      return;
+    }
     const controls = document.createElement('div');
     controls.className = 'word-tools-controls';
     controls.innerHTML = '<button type="button" id="word-bookmark-save" title="把当前单词设为书签">设为书签</button><button type="button" id="word-bookmark-resume" title="点击直接跳到书签单词">🔖 跳到书签</button><button type="button" id="word-note-add">＋ 加入笔记本</button><button type="button" id="word-notebook-open">📒 笔记本 <span id="word-notebook-count">0</span></button>';
