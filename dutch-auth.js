@@ -295,4 +295,4 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 })();
 
 // Word-only extension: preserve the existing learning page and other modules.
-(function(){if(document.querySelector('script[data-word-tools]'))return;const s=document.createElement('script');s.src='./word-tools.js?v=3';s.defer=true;s.dataset.wordTools='1';document.head.appendChild(s);})();
+(function(){if(document.querySelector('script[data-word-tools]'))return;const s=document.createElement('script');s.src='./word-tools.js?v=4';s.defer=true;s.dataset.wordTools='1';document.head.appendChild(s);})();
