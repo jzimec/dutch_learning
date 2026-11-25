@@ -104,7 +104,7 @@
       list.appendChild(row);
     });
   }
-  function installStyle(){if(document.getElementById('word-tools-style'))return;const style=document.createElement('style');style.id='word-tools-style';style.textContent=".word-tools-controls{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;margin:0 0 6px}.word-tools-controls button{font:inherit;font-size:12px;border:1px solid #9bb5db;background:#fff;border-radius:8px;padding:5px 7px;cursor:pointer;color:#16406f}.word-tools-controls button:disabled{opacity:.45}.word-tools-overlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;padding:12px}.word-tools-dialog{background:#fff;color:#192536;border-radius:14px;width:min(520px,100%);max-height:85vh;overflow:auto;padding:16px}.word-tools-dialog header{display:flex;justify-content:space-between;align-items:center}.word-tools-dialog header button{font-size:25px;border:0;background:transparent}.word-tools-hint{font-size:12px;color:#536273}.word-tools-entry{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid #e5e8ee;padding:8px 0}.word-tools-open{flex:1;text-align:left;border:0;background:transparent;color:#174d85}@media(max-width:600px){.word-tools-controls{justify-content:center}.word-tools-controls button{font-size:11px;padding:4px 6px}}";style.textContent += '.word-tools-card{width:100%;box-sizing:border-box;min-width:0;margin-top:0}.word-tools-card .word-tools-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 0;justify-content:stretch}.word-tools-card .word-tools-controls button{width:100%;min-height:38px;white-space:normal;overflow-wrap:anywhere;text-align:center;font-size:13px;padding:7px 8px}@media(max-width:420px){.word-tools-card .word-tools-controls{gap:6px}.word-tools-card .word-tools-controls button{font-size:12px;min-height:36px}}';document.head.appendChild(style);}
+  function installStyle(){if(document.getElementById('word-tools-style'))return;const style=document.createElement('style');style.id='word-tools-style';style.textContent=".word-tools-controls{display:flex;flex-wrap:wrap;gap:5px;justify-content:flex-end;margin:0 0 6px}.word-tools-controls button{font:inherit;font-size:12px;border:1px solid #9bb5db;background:#fff;border-radius:8px;padding:5px 7px;cursor:pointer;color:#16406f}.word-tools-controls button:disabled{opacity:.45}.word-tools-overlay{position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.5);display:flex;justify-content:center;align-items:center;padding:12px}.word-tools-dialog{background:#fff;color:#192536;border-radius:14px;width:min(520px,100%);max-height:85vh;overflow:auto;padding:16px}.word-tools-dialog header{display:flex;justify-content:space-between;align-items:center}.word-tools-dialog header button{font-size:25px;border:0;background:transparent}.word-tools-hint{font-size:12px;color:#536273}.word-tools-entry{display:flex;gap:8px;align-items:center;justify-content:space-between;border-top:1px solid #e5e8ee;padding:8px 0}.word-tools-open{flex:1;text-align:left;border:0;background:transparent;color:#174d85}@media(max-width:600px){.word-tools-controls{justify-content:center}.word-tools-controls button{font-size:11px;padding:4px 6px}}";style.textContent += '.word-tools-card{width:100%;box-sizing:border-box;min-width:0;margin-top:0}.word-tools-card .word-tools-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 0;justify-content:stretch}.word-tools-card .word-tools-controls button{width:100%;min-height:38px;white-space:normal;overflow-wrap:anywhere;text-align:center;font-size:13px;padding:7px 8px}@media(max-width:420px){.word-tools-card .word-tools-controls{gap:6px}.word-tools-card .word-tools-controls button{font-size:12px;min-height:36px}}';style.textContent += '.word-tools-card{padding:7px 9px!important}.word-tools-card .label{display:none}.word-tools-card .word-tools-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:0}.word-tools-card .word-tools-controls button{min-width:0;min-height:30px;padding:4px 2px;font-size:clamp(9px,2.3vw,12px);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}@media(max-width:420px){.word-tools-card .word-tools-controls{gap:3px}.word-tools-card .word-tools-controls button{min-height:30px;font-size:10px;padding:4px 1px}}';document.head.appendChild(style);}
   function init() {
     installStyle();
     const card = document.querySelector('.word-card');
@@ -116,10 +116,7 @@
       if (!existingCard) {
         existingCard = document.createElement('section');
         existingCard.className = 'card word-tools-card';
-        const heading = document.createElement('div');
-        heading.className = 'label blue';
-        heading.textContent = 'Bookmark & Notebook';
-        existingCard.append(heading, existingControls);
+        existingCard.append(existingControls);
       }
       existingStory.insertAdjacentElement('afterend', existingCard);
       return;
@@ -132,10 +129,7 @@
     const toolsCard = document.createElement('section');
     toolsCard.className = 'card word-tools-card';
     toolsCard.setAttribute('aria-label', '书签与复习笔记本');
-    const heading = document.createElement('div');
-    heading.className = 'label blue';
-    heading.textContent = 'Bookmark & Notebook';
-    toolsCard.append(heading, controls);
+    toolsCard.append(controls);
     story.insertAdjacentElement('afterend', toolsCard);
     controls.querySelector('#word-bookmark-save').onclick = () => { const p = position(); if (p && write(POS_KEY, p)) refresh(); };
     controls.querySelector('#word-bookmark-resume').onclick = () => { const p = read(POS_KEY, null); if (p) jump(p); };
