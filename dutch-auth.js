@@ -5,11 +5,16 @@ const URL="https://uxzyswpxwqcjvgkjlwhv.supabase.co";
 const KEY="sb_publishable_XYuHAixMGkRaFj6-bt3mXg_GGov9jUl";
 const KINDS=[["learn","Learn"],["quiz","Quiz"],["dialogue","Dialogue"],["grammar","Grammar"],["progress","Progress"],["categories","Categories"],["ai","AI Dialogue"]];
 let client=null,loading=null,dialog=null,profile=null,recoverySeen=false,currentUserId=null;
+// Keep the learning UI inaccessible until the server confirms approval.
+document.documentElement.classList.add("da-locked");
+function setApproved(approved){document.documentElement.classList.toggle("da-locked",!approved);}
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function style(){
  if(document.getElementById("dutch-auth-style"))return;
  const el=document.createElement("style");el.id="dutch-auth-style";
  el.textContent=`
+ html.da-locked body > :not(#da-overlay):not(#da-account-btn):not(script):not(style){visibility:hidden!important;pointer-events:none!important}
+ html.da-locked #da-overlay,html.da-locked #da-account-btn{visibility:visible!important}
  #da-overlay{position:fixed;inset:0;background:rgba(0,0,0,.46);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px}
  #da-panel{background:#fff;color:#1b2935;border-radius:14px;padding:20px;max-width:430px;width:100%;max-height:85vh;overflow:auto;font:16px/1.5 system-ui,Arial,sans-serif;box-shadow:0 16px 44px #0004}
  #da-panel h3{margin:0 0 12px;font-size:21px;color:#153249}
@@ -56,7 +61,7 @@ function loadClient(){
     try{
       if(!window.supabase?.createClient)throw Error("Supabase 登录组件未加载");
       client=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:false,detectSessionInUrl:true}});
-      client.auth.onAuthStateChange((event,session)=>{if(!session)profile=null;currentUserId=session?.user?.id||null;window.dispatchEvent(new Event('dutch-auth-change'));const btn=document.getElementById("da-account-btn");updateAccountButton(btn,session);if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
+      client.auth.onAuthStateChange((event,session)=>{if(!session){profile=null;setApproved(false);}currentUserId=session?.user?.id||null;window.dispatchEvent(new Event('dutch-auth-change'));const btn=document.getElementById("da-account-btn");updateAccountButton(btn,session);if(event==="PASSWORD_RECOVERY"){recoverySeen=true;setTimeout(()=>showPasswordRecovery(),0);}});
       resolve(client);
     }catch(e){reject(e);}
    }
@@ -95,7 +100,7 @@ async function ensure(requireAi=true,skipSessionCheck=false){
    if(session?.access_token)token=session.access_token;
   }catch(e){}
  }
- if(token)return token;
+ if(token){const p=await getProfile();if(p?.status!=="approved")throw Error("账户尚未获得管理员批准");setApproved(true);return token;}
  return new Promise((resolve,reject)=>{
   const body=createPanel("Dutch Learning");
   dialog.classList.add("da-home");
@@ -104,7 +109,7 @@ async function ensure(requireAi=true,skipSessionCheck=false){
    '<label>密码</label><input id="da-password" type="password" autocomplete="current-password" />'+
    '<div id="da-status" class="da-error"></div>'+
    '<button id="da-signin">登录</button><button id="da-signup" class="da-secondary">注册新账户</button><button id="da-forgot" class="da-secondary">忘记密码？</button><button id="da-cancel" class="da-secondary">取消</button>'+
-   '<p class="da-note">新账户需要管理员批准才能使用 AI。请勿在此输入 Supabase 密钥或 OpenAI API Key。</p>';
+   '<p class="da-note">新账户需要管理员批准才能使用学习功能。请勿在此输入 Supabase 密钥或 OpenAI API Key。</p>';
   const q=x=>body.querySelector(x);
   q("#da-cancel").onclick=()=>{close();reject(Error("已取消登录"));};
   async function submit(signUp){
@@ -122,6 +127,8 @@ async function ensure(requireAi=true,skipSessionCheck=false){
      }
      const {error}=await c.auth.signInWithPassword({email,password});
      if(error)throw error;
+     const p=await getProfile();
+     if(p?.status!=="approved"){await c.auth.signOut();throw Error("账户状态："+(p?.status||"pending")+"。请等待管理员批准后登录");}
      let t;
      if(requireAi)t=await getToken();
      else{
@@ -129,7 +136,7 @@ async function ensure(requireAi=true,skipSessionCheck=false){
        t=session?.access_token;
      }
      if(!t)throw Error("请完成邮箱验证后再登录");
-     close();syncButton();resolve(t);
+     setApproved(true);close();syncButton();resolve(t);
    }catch(e){message(e.message||"登录失败");}
    finally{if(dialog){q("#da-signin").disabled=q("#da-signup").disabled=false;}}
   }
