@@ -76,7 +76,7 @@ function loadClient(){
 async function getProfile(){
  const c=await loadClient(),{data:{user},error}=await c.auth.getUser();
  if(error||!user)return null;
- const {data,error:pe}=await c.from("profiles").select("status,is_admin,permissions,ai_daily_limit").eq("id",user.id).single();
+ const {data,error:pe}=await c.from("profiles").select("status,is_admin,permissions,ai_daily_limit,trial_expires_at").eq("id",user.id).single();
  if(pe||!data)throw Error("账户资料尚未建立，请联系管理员");
  profile=data;return data;
 }
@@ -85,7 +85,7 @@ async function getToken(){
  const {data:{session}}=await c.auth.getSession();
  if(!session?.access_token)return null;
  const p=await getProfile();
- if(p?.status!=="approved")throw Error("账户尚未获得管理员批准");
+ if(p?.status!=="approved" || (p.trial_expires_at && Date.parse(p.trial_expires_at)<=Date.now()))throw Error("账户未获批准或试用期已结束");
  if(p?.permissions?.ai!==true)throw Error("管理员尚未开启你的 AI Dialogue 功能");
  return session.access_token;
 }
@@ -128,7 +128,7 @@ async function ensure(requireAi=true,skipSessionCheck=false){
      const {error}=await c.auth.signInWithPassword({email,password});
      if(error)throw error;
      const p=await getProfile();
-     if(p?.status!=="approved"){await c.auth.signOut();throw Error("账户状态："+(p?.status||"pending")+"。请等待管理员批准后登录");}
+     if(p?.status!=="approved" || (p.trial_expires_at && Date.parse(p.trial_expires_at)<=Date.now())){await c.auth.signOut();throw Error("账户未获批准或试用期已结束，请联系管理员");}
      let t;
      if(requireAi)t=await getToken();
      else{
