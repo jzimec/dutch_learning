@@ -1,6 +1,6 @@
 {
-  "name": "Dutch Learning",
-  "short_name": "Dutch Learning",
+  "name": "Woordica",
+  "short_name": "Woordica",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
